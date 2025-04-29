@@ -12,16 +12,16 @@ import (
 var DB *gorm.DB
 
 // InitDB 初始化数据库连接
-func InitDB(dsn string) error {
+func InitDB(dsn string) (*gorm.DB,error) {
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return fmt.Errorf("failed to connect database: %v", err)
+		return nil,fmt.Errorf("failed to connect database: %v", err)
 	}
 
 	sqlDB, err := DB.DB()
 	if err != nil {
-		return fmt.Errorf("failed to get sql.DB: %v", err)
+		return nil,fmt.Errorf("failed to get sql.DB: %v", err)
 	}
 
 	// 连接池配置
@@ -29,7 +29,7 @@ func InitDB(dsn string) error {
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	return nil
+	return DB,nil
 }
 
 // // User 示例模型

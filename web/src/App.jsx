@@ -1,13 +1,19 @@
-import {  Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Layout, Menu } from 'antd';
 import './App.css';
 import Console from './views/console';
 import Control from './views/control';
+import Login from './views/Login';
 
 const { Header, Content, Footer } = Layout;
 
 export default function App() {
   const navigate = useNavigate();
+  const isLoggedIn = localStorage.getItem('isLoggedIn');
+
+  if (!isLoggedIn) {
+    navigate('/login');
+  }
   
   return (
       <Layout className="layout">
@@ -26,6 +32,7 @@ export default function App() {
           <Routes>
             <Route path="/console" element={<Console />} />
             <Route path="/control" element={<Control />} />
+            <Route path="/login" element={<Login />} />
           </Routes>
         </Content>
         <Footer style={{ textAlign: 'center' }}>

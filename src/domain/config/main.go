@@ -4,15 +4,39 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+
+	"sgridnext.com/src/logger"
 )
 
-var Conf = make(map[string]interface{})
+type Config map[string]interface{}
 
-func LoadConfig(fileName string) {
-	Conf = ReadJson(fileName)
+func (c Config) Get(args... string) string {
+	defer func() {
+		if err := recover(); err!= nil {
+			logger.App.Errorf("config get error: %v", err)
+		}
+	}()
+	if len(args) == 0 {
+		return ""
+	}
+	conf := c
+	for i, arg := range args {
+		if i == len(args)-1 {
+			return conf[arg].(string)
+		}
+		conf = conf[arg].(map[string]interface{})
+	}
+	return ""
 }
 
-func ReadJson(filePath string) map[string]interface{} {
+var Conf = make(Config)
+
+func LoadConfig(fileName string)Config{
+	Conf = ReadJson(fileName)
+	return Conf
+}
+
+func ReadJson(filePath string)Config {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil
