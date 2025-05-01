@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, List, Divider, Tree, Button, Modal, Form, InputNumber, Table, Input, message } from 'antd';
 import ButtonGroup from 'antd/es/button/button-group';
-import {  getGroupList, getNodeList, getServerInfo, getServerList, getServerNodes,getServerType } from './api';
+import {  getGroupList, getNodeList, getServerInfo, getServerList, getServerNodes,getServerType,getStatus } from './api';
 import ResourceModal from './ResourceModal';
 import GroupModal from './GroupModal';
 import ServerModal from './ServerModal';
@@ -77,7 +77,13 @@ export default function Console(){
             }
             setServerNodes(res.data);
             console.log('res',res);
+            res.data.map(v=>{
+                getStatus({nodeId:v.id}).then(res=>{
+                    console.log('res',res);
+                })
+            })
         });
+
     }
 
     useEffect(() => {
@@ -202,7 +208,6 @@ export default function Console(){
                                 { title: '端口号', key: 'port', dataIndex:"port" },
                                 { title: '创建时间', dataIndex: 'node_create_time', key: 'node_create_time' },
                                 { title: '版本号', key: 'patch_id', dataIndex:"patch_id" },
-                                { title: '端口号', key: 'port', dataIndex:"port" },
                             ]}
                             dataSource={serverNodes}
                             rowKey="id"

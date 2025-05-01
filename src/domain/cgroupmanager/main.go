@@ -24,7 +24,37 @@ func (cm *CgroupManager) GetCgroup() interface{} {
 	return cm.cgroup
 }
 
+func LoadCgroupManager(name string) (*CgroupManager, error) {
+	// 检测 cgroup 版本
+	isV2, err := isCgroupV2()
+	if err!= nil {
+		return nil, fmt.Errorf("failed to detect cgroup version: %v", err)
+	}
+	if isV2 {
+		// 使用 cgroup v2
+		groupPath := filepath.Join("/", name)
+		manager, err := cgroupsv2.LoadManager("/sys/fs/cgroup/system.slice",groupPath)
+		if err!= nil {
+			return nil, fmt.Errorf("failed to load cgroup v2 manager: %v", err)
+		}
+		return &CgroupManager{cgroup2: manager, isV2: true}, nil
+	}
+	// 使用 cgroup v1
+	mountPath := cgroups.Slice("system.slice", name)
+	control, err := cgroups.Load(cgroups.Systemd, mountPath)
+	if err!= nil {
+		return nil, fmt.Errorf("failed to load cgroup v1 manager: %v", err)
+	}
+	return &CgroupManager{cgroup: control, isV2: false}, nil
+}
+
 func NewCgroupManager(name string) (*CgroupManager, error) {
+	// 先加载看有没有 Cgroup目录
+	manger, err := LoadCgroupManager(name)
+	if err == nil {
+		return manger, nil
+	}
+
 	// 检测 cgroup 版本
 	isV2, err := isCgroupV2()
 	if err != nil {

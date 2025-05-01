@@ -97,3 +97,37 @@ export function  getServerType(type){
 export function setCpuLimit(data) {
   return request({ url: "/server/cgroup/setCpuLimit", data });
 }
+
+export function getStatus(data) {
+  return request({ url: "/server/cgroup/getStatus", data });
+}
+
+// {
+//   "data": {
+//       "cpu": {
+//           "usage": 1767523414000,
+//           "usagePerSec": 1767.523414,
+//           "shares": 0,
+//           "throttled": 50249141
+//       },
+//       "memory": {
+//           "usage": 331776,
+//           "limit": 0,
+//           "cache": 4096,
+//           "swapUsage": 0,
+//           "swapLimit": 0,
+//           "oomEvents": 0
+//       },
+//       "io": {
+//           "readBytes": 0,
+//           "writeBytes": 0
+//       },
+//       "pids": {
+//           "current": 5,
+//           "limit": 18446744073709551615
+//       },
+//       "version": "v2",
+//       "time": "2025-05-01T12:27:17.195937734+08:00"
+//   },
+//   "success": true
+// }
