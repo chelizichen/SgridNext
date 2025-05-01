@@ -4,5 +4,6 @@
     "plantform":{
         "account":"admin",
         "password":"admin@sgridnext"
-    }
+    },
+    "nodeIndex":"1"
 }

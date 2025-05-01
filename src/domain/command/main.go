@@ -7,15 +7,13 @@ import (
 	"path/filepath"
 
 	"sgridnext.com/src/constant"
-	"sgridnext.com/src/domain/cgroupmanager"
 	"sgridnext.com/src/logger"
 )
 
 type Command struct {
 	cmd        *exec.Cmd
 	serverName string
-	pid        int
-	cgroupMgr  *cgroupmanager.CgroupManager
+	nodeId int
 }
 
 func NewServerCommand(serverName string) *Command {
@@ -28,45 +26,23 @@ func (c *Command) GetCmd() *exec.Cmd {
 	return c.cmd
 }
 
-func (c *Command) GetCgroupManager() *cgroupmanager.CgroupManager {
-	return c.cgroupMgr
-}
-
-func (c *Command) SetPid(pid int) {
-	c.pid = pid
-}
 
 func (c *Command) GetPid() int {
-	return c.pid
+	return c.cmd.Process.Pid
+}
+
+func (c *Command) SetNodeId(nodeId int) {
+	c.nodeId = nodeId
+}
+
+func (c *Command) GetNodeId() int {
+	return c.nodeId
 }
 
 func (c *Command) GetServerName() string {
 	return c.serverName
 }
 
-func (c *Command) SetCgroup(name string) error {
-	mgr, err := cgroupmanager.NewCgroupManager(name)
-	if err != nil {
-		return err
-	}
-	c.cgroupMgr = mgr
-	logger.CMD.Infof("name : %s | c.cgroupMgr: %v \n", name,c.cgroupMgr)
-	return nil
-}
-
-func (c *Command) SetCPULimit(cpuShares float64) error {
-	if c.cgroupMgr == nil {
-		return fmt.Errorf("cgroup manager not initialized")
-	}
-	return c.cgroupMgr.SetCPULimit(cpuShares)
-}
-
-func (c *Command) SetMemoryLimit(memoryLimit int64) error {
-	if c.cgroupMgr == nil {
-		return fmt.Errorf("cgroup manager not initialized")
-	}
-	return c.cgroupMgr.SetMemoryLimit(memoryLimit)
-}
 
 func (c *Command) SetCommand(cmd string, args ...string) error {
 	logger.CMD.Infof("s.cmd: %s | args: %s \n", cmd, args)
@@ -80,10 +56,6 @@ func (c *Command) SetCommand(cmd string, args ...string) error {
 	)
 	logger.CMD.Infof("s.cmd.Env: %s \n", c.cmd.Env)
 	c.cmd.Dir = filepath.Join(cwd, constant.TARGET_SERVANT_DIR, c.serverName)
-	err := c.SetCgroup(c.serverName)
-	if err!= nil {
-		return err
-	}
 	logger.CMD.Infof("s.cmd.Dir: %s \n", c.cmd.Dir)
 	return nil
 }
@@ -96,17 +68,8 @@ func (c *Command) Start() error {
 	if c.cmd == nil {
 		return fmt.Errorf("command not initialized")
 	}
-	if c.cgroupMgr == nil {
-		return fmt.Errorf("cgroup manager not initialized")
-	}
 	err := c.cmd.Start()
 	if err!= nil {
-		return err
-	}
-	pid := c.cmd.Process.Pid
-	c.SetPid(pid)
-	err = c.cgroupMgr.AddProcess(pid)
-	if err != nil {
 		return err
 	}
 	return nil
@@ -117,19 +80,5 @@ func (c *Command) Stop() error {
 	if c.cmd == nil {
 		return fmt.Errorf("command not initialized")
 	}
-	if c.cgroupMgr == nil {
-		return fmt.Errorf("cgroup manager not initialized")
-	}
-	err := c.cgroupMgr.Remove()
-	if err!= nil {
-		return err
-	}
 	return c.cmd.Process.Kill()
 }
-
-// func main() {
-// 	cmd := NewServerCommand("test")
-// 	cmd.SetCgroup("test-group")           // 初始化cgroup
-// 	cmd.SetCPULimit(512)                  // 设置CPU份额
-// 	cmd.SetMemoryLimit(1024 * 1024 * 100) // 设置内存限
-// }

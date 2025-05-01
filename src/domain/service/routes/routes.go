@@ -49,6 +49,8 @@ func LoadRoutes(engine *gin.Engine) {
 
 	// CGROUP 设置 服务 LIMIt CPU
 	engine.POST("/server/cgroup/setCpuLimit", handlers.SetCpuLimit)
+	// CGROUP 设置 服务 LIMIt MEM
+	engine.POST("/server/cgroup/setMemLimit", handlers.SetMemoryLimit)
 	engine.POST("/server/cgroup/getStatus", handlers.GetStatus)
 	// 登录
 	engine.POST("/login", handlers.Login)

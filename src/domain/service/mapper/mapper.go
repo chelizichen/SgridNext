@@ -116,8 +116,21 @@ type ServerNodesVo struct {
 	ServerNodeStatus int    `json:"server_node_status"`
 }
 
-func (t *T_PatchServer_Mapper) GetServerNodes(id int) ([]ServerNodesVo, error) {
+func (t *T_PatchServer_Mapper) GetServerNodes(serverId int,nodeId int) ([]ServerNodesVo, error) {
 	var servers []ServerNodesVo
+	var params []interface{}
+	where := " where 1 = 1"
+
+	if serverId > 0 {
+		where += " and server_nodes.server_id = ?"
+		params = append(params, serverId)
+	}
+
+	if nodeId > 0 {
+		where += " and server_nodes.node_id =?"
+		params = append(params, nodeId)
+	}
+
 	query := `
 	SELECT 
 		server_nodes.id as id,
@@ -129,9 +142,9 @@ func (t *T_PatchServer_Mapper) GetServerNodes(id int) ([]ServerNodesVo, error) {
 	FROM server_nodes
 	LEFT JOIN 
 		nodes ON server_nodes.node_id = nodes.id
-	where server_nodes.server_id = ?
 	`
-	res := t.db.Raw(query, id).Scan(&servers)
+	query += where
+	res := t.db.Raw(query, params...).Scan(&servers)
 	return servers, res.Error
 }
 

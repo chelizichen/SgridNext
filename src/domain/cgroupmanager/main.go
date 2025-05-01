@@ -168,3 +168,12 @@ func convertSharesToWeight(shares uint64) uint64 {
 	}
 	return weight
 }
+
+type SgridCgroup struct {
+	ServerName string
+	NodeId int
+}
+
+func (s *SgridCgroup)GetCgroupName() string {
+	return fmt.Sprintf("sgrid-%s-%s", s.ServerName, s.NodeId)
+}

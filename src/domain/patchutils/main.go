@@ -131,7 +131,6 @@ func (p *pathUtils) StartServer(cmd *command.Command) (int, error) {
 	if err := cmd.Start(); err != nil {
 		return 0, err
 	}
-	cmd.SetPid(cmd.GetCmd().Process.Pid)
 	return cmd.GetCmd().Process.Pid, nil
 }
 

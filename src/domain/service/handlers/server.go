@@ -214,7 +214,7 @@ func DeployServer(ctx *gin.Context) {
 		return
 	}
 
-	nodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId)
+	nodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId,0)
 	logger.Server.Infof("DeployServer | nodes | %v", nodes)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器节点信息失败", "error": err.Error()})
@@ -240,6 +240,7 @@ func DeployServer(ctx *gin.Context) {
 			TargetFile: targetFile,
 			BindPort:   node.Port,
 			BindHost:   node.Host,
+			NodeId:     node.Id,
 		}
 		logger.Server.Infof("DeployServer | patchServerInfo | %v", patchServerInfo)
 		cmd,err := patchServerInfo.CreateCommand()
@@ -258,6 +259,11 @@ func DeployServer(ctx *gin.Context) {
 		command.CenterManager.AddCommand(node.Id, cmd)
 		if err!= nil {
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "启动服务器失败", "error": err.Error()})
+			return
+		}
+		err = command.UseCgroup(cmd)
+		if err!= nil {
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "设置cgroup失败", "error": err.Error()})
 			return
 		}
 		logger.Server.Infof("DeployServer | cmd | %v", cmd)
@@ -288,52 +294,6 @@ func StopServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "停止服务器成功"})
 }
 
-func SetCpuLimit(ctx *gin.Context) {
-	var req struct {
-		NodeIds  []int `json:"nodeIds"`
-		CpuLimit float64 `json:"cpuLimit"`
-	}
-	if err := ctx.ShouldBindJSON(&req); err!= nil {
-		logger.Server.Infof("SetCpuLimit Error | %v", err)
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
-		return
-	}
-	logger.Server.Infof("SetCpuLimit args | %v", req)
-	for _, nodeId := range req.NodeIds {
-		currentCommand := command.CenterManager.GetCommand(nodeId)
-		if currentCommand!= nil {
-			logger.Server.Infof("SetCpuLimit | servername %s | pid | %v  ", 
-		currentCommand.GetServerName(),
-				currentCommand.GetPid(),
-			)
-			err := currentCommand.SetCPULimit(req.CpuLimit)
-			if err!= nil {
-				ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "设置CPU限制失败", "error": err.Error()})
-				return
-			}
-		}
-	}
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "设置CPU限制成功"})
-}
-
-func GetStatus(ctx *gin.Context){
-	var req struct {
-		NodeId int `json:"nodeId"`
-	}
-	if err := ctx.ShouldBindJSON(&req); err!= nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
-		return
-	}
-	currentCommand := command.CenterManager.GetCommand(req.NodeId)
-	control := currentCommand.GetCgroupManager()
-	stats, err := control.Stat()
-	if err!= nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取状态失败", "error": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": stats})
-}
-
 
 func RestartServer(ctx *gin.Context) {
 
@@ -355,7 +315,7 @@ func GetServerNodes(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	res, err := mapper.T_Mapper.GetServerNodes(req.Id)
+	res, err := mapper.T_Mapper.GetServerNodes(req.Id,0)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器信息失败", "error": err.Error()})
 		return
