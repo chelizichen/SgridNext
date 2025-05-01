@@ -66,7 +66,7 @@ func (t *T_PatchServer_Mapper) CreateServerNode(req []*entity.ServerNode) error 
 }
 
 func (t *T_PatchServer_Mapper) CreateServerPackage(req *entity.ServerPackage) (int, error) {
-	res := t.db.Debug().Create(*req)
+	res := t.db.Debug().Create(req)
 	if res.Error != nil {
 		return 0, res.Error
 	}
@@ -139,4 +139,18 @@ func (t *T_PatchServer_Mapper) GetNodeList() ([]entity.Node, error) {
 	var nodes []entity.Node
 	res := t.db.Debug().Find(&nodes)
 	return nodes, res.Error
+}
+
+
+func (t *T_PatchServer_Mapper) GetServerPackageList(id int) ([]entity.ServerPackage, error) {
+	var packages []entity.ServerPackage
+	// 根据id 倒叙
+	res := t.db.Debug().Order("id desc").Where("server_id =?", id).Find(&packages)
+	return packages, res.Error
+}
+
+func (t *T_PatchServer_Mapper) GetServerPackageInfo(id int) (entity.ServerPackage, error) {
+	var serverPackage entity.ServerPackage
+	res := t.db.Debug().Where("id =?", id).First(&serverPackage)
+	return serverPackage, res.Error
 }

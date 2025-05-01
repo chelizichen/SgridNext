@@ -43,5 +43,7 @@ type ServerPackage struct {
 	ID         int    `gorm:"column:id;primaryKey;autoIncrement"`
 	ServerId   int    `gorm:"column:server_id"`
 	Hash       string `gorm:"column:hash;type:varchar(255)"`
+	Commit     string `gorm:"column:commit;type:varchar(255)"`
+	FileName   string `gorm:"column:file_name;type:varchar(255)"`
 	CreateTime string `gorm:"column:create_time;type:varchar(64)"`
 }

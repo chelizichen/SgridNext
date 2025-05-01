@@ -1,7 +1,10 @@
-import React from 'react';
-import { Modal, Form, InputNumber } from 'antd';
-
-export default function ResourceModal({ visible, onOk, onCancel, form }) {
+import React, { useEffect } from 'react';
+import { Modal, Form, InputNumber, List } from 'antd';
+import { setCpuLimit } from './api';
+export default function ResourceModal({ visible, onOk, onCancel, form, nodes }) {
+    useEffect(()=>{
+        console.log('nodes', nodes);
+    },[nodes])
     return (
         <Modal
             title="资源配置"
@@ -9,6 +12,10 @@ export default function ResourceModal({ visible, onOk, onCancel, form }) {
             onOk={() => {
                 form.validateFields()
                     .then(values => {
+                        setCpuLimit({
+                            cpuLimit: values.cpu,
+                            nodeIds: nodes.map(node => node.id),
+                        });
                         onOk(values);
                     })
                     .catch(info => {
@@ -17,6 +24,14 @@ export default function ResourceModal({ visible, onOk, onCancel, form }) {
             }}
             onCancel={onCancel}
         >
+            <List
+                dataSource={nodes}
+                renderItem={item => (
+                    <List.Item>
+                        {item.host}:{item.port}
+                    </List.Item>
+                )}
+            />
             <Form form={form} layout="vertical">
                 <Form.Item
                     name="memory"
@@ -30,7 +45,7 @@ export default function ResourceModal({ visible, onOk, onCancel, form }) {
                     label="CPU核数"
                     rules={[{ required: true, message: '请输入CPU核数' }]}
                 >
-                    <InputNumber min={1} max={32} style={{ width: '100%' }} />
+                    <InputNumber min={0.1} max={32} style={{ width: '100%' }} />
                 </Form.Item>
             </Form>
         </Modal>

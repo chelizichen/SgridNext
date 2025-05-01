@@ -1,6 +1,6 @@
 {
     "Hello":"World",
-    "db":"root:123456@tcp(127.0.0.1:3306)/sgrid_next?charset=utf8&parseTime=true",
+    "db":"root:lzy20211121@tcp(124.220.19.199:13306)/sgrid_next?charset=utf8&parseTime=true",
     "plantform":{
         "account":"admin",
         "password":"admin@sgridnext"

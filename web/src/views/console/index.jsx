@@ -21,6 +21,7 @@ export default function Console(){
     const [groupForm] = Form.useForm();
     const [serverForm] = Form.useForm();
     const [groupOptions, setGroupOptions] = useState([]);
+    const [selectNodes, setSelectNodes] = useState([])
     const handleRefresh = () => {
         // 这里可以添加实际的刷新逻辑
         console.log('刷新数据');
@@ -104,6 +105,7 @@ export default function Console(){
     const rowSelection = {
         onChange: (selectedRowKeys, selectedRows) => {
           console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+          setSelectNodes(selectedRows);
         },
         getCheckboxProps: record => ({
           disabled: record.name === 'Disabled User', // Column configuration not to be checked
@@ -203,7 +205,7 @@ export default function Console(){
                                 { title: '端口号', key: 'port', dataIndex:"port" },
                             ]}
                             dataSource={serverNodes}
-                            rowKey="key"
+                            rowKey="id"
                             pagination={false}
                         />
                     </Card>
@@ -220,7 +222,6 @@ export default function Console(){
                     </Card>
                 </Col>
             </Row>
-            
             <ResourceModal
                 visible={resourceModalVisible}
                 onOk={(values) => {
@@ -229,6 +230,7 @@ export default function Console(){
                 }}
                 onCancel={() => setResourceModalVisible(false)}
                 form={form}
+                nodes={selectNodes}
             />
             <GroupModal
                 visible={groupModalVisible}
@@ -275,7 +277,8 @@ export default function Console(){
                 visible={deployModalVisible}
                 onOk={() => setDeployModalVisible(false)}
                 onCancel={() => setDeployModalVisible(false)}
-                nodes={treeData.flatMap(group => group.children)}
+                nodes={serverNodes}
+                serverInfo={serverInfo}
             />
             <AddNodeModal
                 visible={addNodeVisible}

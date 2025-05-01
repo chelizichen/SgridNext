@@ -13,7 +13,7 @@ type ServerInfo struct {
 	TargetFile string
 }
 
-func (s *ServerInfo) CreateCommand() *command.Command {
+func (s *ServerInfo) CreateCommand()( *command.Command,error) {
 	if s.ServerType == constant.SERVER_TYPE_BINARY {
 		return command.CreateBinaryCommand(s.ServerName, s.TargetFile)
 	}
@@ -23,5 +23,5 @@ func (s *ServerInfo) CreateCommand() *command.Command {
 	if s.ServerType == constant.SERVER_TYPE_JAVA {
 		return command.CreateJavaJarCommand(s.ServerName, s.TargetFile)
 	}
-	return nil
+	return nil,nil
 }

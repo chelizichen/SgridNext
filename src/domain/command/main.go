@@ -28,8 +28,20 @@ func (c *Command) GetCmd() *exec.Cmd {
 	return c.cmd
 }
 
+func (c *Command) GetCgroupManager() *cgroupmanager.CgroupManager {
+	return c.cgroupMgr
+}
+
 func (c *Command) SetPid(pid int) {
 	c.pid = pid
+}
+
+func (c *Command) GetPid() int {
+	return c.pid
+}
+
+func (c *Command) GetServerName() string {
+	return c.serverName
 }
 
 func (c *Command) SetCgroup(name string) error {
@@ -38,10 +50,11 @@ func (c *Command) SetCgroup(name string) error {
 		return err
 	}
 	c.cgroupMgr = mgr
+	logger.CMD.Infof("name : %s | c.cgroupMgr: %v \n", name,c.cgroupMgr)
 	return nil
 }
 
-func (c *Command) SetCPULimit(cpuShares uint64) error {
+func (c *Command) SetCPULimit(cpuShares float64) error {
 	if c.cgroupMgr == nil {
 		return fmt.Errorf("cgroup manager not initialized")
 	}
@@ -55,19 +68,24 @@ func (c *Command) SetMemoryLimit(memoryLimit int64) error {
 	return c.cgroupMgr.SetMemoryLimit(memoryLimit)
 }
 
-func (c *Command) SetCommand(cmd string, args ...string) {
+func (c *Command) SetCommand(cmd string, args ...string) error {
 	logger.CMD.Infof("s.cmd: %s | args: %s \n", cmd, args)
 	cwd, _ := os.Getwd()
 	c.cmd = exec.Command(cmd, args...)
 	c.cmd.Env = append(c.cmd.Env,
-		fmt.Sprintf("%s=%s", constant.SGRID_LOG_DIR, filepath.Join(cwd, constant.TARGET_LOG_DIR)),
-		fmt.Sprintf("%s=%s", constant.SGRID_CONF_DIR, filepath.Join(cwd, constant.TAGET_CONF_DIR)),
-		fmt.Sprintf("%s=%s", constant.SGRID_PACKAGE_DIR, filepath.Join(cwd, constant.TARGET_PACKAGE_DIR)),
-		fmt.Sprintf("%s=%s", constant.SGRID_SERVANT_DIR, filepath.Join(cwd, constant.TARGET_SERVANT_DIR)),
+		fmt.Sprintf("%s=%s", constant.SGRID_LOG_DIR, filepath.Join(cwd, constant.TARGET_LOG_DIR,c.serverName)),
+		fmt.Sprintf("%s=%s", constant.SGRID_CONF_DIR, filepath.Join(cwd, constant.TAGET_CONF_DIR,c.serverName)),
+		fmt.Sprintf("%s=%s", constant.SGRID_PACKAGE_DIR, filepath.Join(cwd, constant.TARGET_PACKAGE_DIR,c.serverName)),
+		fmt.Sprintf("%s=%s", constant.SGRID_SERVANT_DIR, filepath.Join(cwd, constant.TARGET_SERVANT_DIR,c.serverName)),
 	)
 	logger.CMD.Infof("s.cmd.Env: %s \n", c.cmd.Env)
 	c.cmd.Dir = filepath.Join(cwd, constant.TARGET_SERVANT_DIR, c.serverName)
+	err := c.SetCgroup(c.serverName)
+	if err!= nil {
+		return err
+	}
 	logger.CMD.Infof("s.cmd.Dir: %s \n", c.cmd.Dir)
+	return nil
 }
 
 func (c *Command) AppendEnv(kvarr []string) {
@@ -81,11 +99,32 @@ func (c *Command) Start() error {
 	if c.cgroupMgr == nil {
 		return fmt.Errorf("cgroup manager not initialized")
 	}
-	err := c.cgroupMgr.AddProcess(c.pid)
+	err := c.cmd.Start()
+	if err!= nil {
+		return err
+	}
+	pid := c.cmd.Process.Pid
+	c.SetPid(pid)
+	err = c.cgroupMgr.AddProcess(pid)
 	if err != nil {
 		return err
 	}
-	return c.cmd.Start()
+	return nil
+}
+
+
+func (c *Command) Stop() error {
+	if c.cmd == nil {
+		return fmt.Errorf("command not initialized")
+	}
+	if c.cgroupMgr == nil {
+		return fmt.Errorf("cgroup manager not initialized")
+	}
+	err := c.cgroupMgr.Remove()
+	if err!= nil {
+		return err
+	}
+	return c.cmd.Process.Kill()
 }
 
 // func main() {

@@ -79,6 +79,7 @@ export function login(data) {
   return request({ url: "/login", data });
 }
 
+
 export function  getServerType(type){
   if(type == 1){
       return "Node"
@@ -89,4 +90,10 @@ export function  getServerType(type){
   if(type == 3){
       return "Binary"
   }
+}
+
+// cgroup
+
+export function setCpuLimit(data) {
+  return request({ url: "/server/cgroup/setCpuLimit", data });
 }

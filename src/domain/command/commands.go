@@ -1,19 +1,19 @@
 package command
 
-func CreateNodeCommand(serverName string, targetFile string) *Command {
+func CreateNodeCommand(serverName string, targetFile string) (*Command ,error){
 	cmd := NewServerCommand(serverName)
-	cmd.SetCommand("node", targetFile)
-	return cmd
+	err := cmd.SetCommand("node", targetFile)
+	return cmd,err
 }
 
-func CreateBinaryCommand(serverName string, targetFile string) *Command {
+func CreateBinaryCommand(serverName string, targetFile string) (*Command ,error){
 	cmd := NewServerCommand(serverName)
-	cmd.SetCommand(targetFile)
-	return cmd
+	err := cmd.SetCommand(targetFile)
+	return cmd,err
 }
 
-func CreateJavaJarCommand(serverName string, targetFile string) *Command {
+func CreateJavaJarCommand(serverName string, targetFile string) (*Command ,error){
 	cmd := NewServerCommand(serverName)
-	cmd.SetCommand("java", "-jar", targetFile)
-	return cmd
+	err := cmd.SetCommand("java", "-jar", targetFile)
+	return cmd,err
 }

@@ -5,10 +5,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/c4milo/unpackit"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/domain/command"
 	"sgridnext.com/src/logger"
@@ -86,9 +88,16 @@ func (p *pathUtils) UpdateConfigFileContent(serverName, configName, configConten
 }
 
 // 计算文件hash
-func (p *pathUtils) CalcPackageHash(file os.File) (string, error) {
+func (p *pathUtils) CalcPackageHash(file *multipart.FileHeader) (string, error) {
 	h := sha256.New()
-	if _, err := io.Copy(h, &file); err != nil {
+	// 打开文件以获取 io.Reader
+	src, err := file.Open()
+	if err != nil {
+		return "", fmt.Errorf("failed to open file: %v", err)
+	}
+	defer src.Close()
+
+	if _, err := io.Copy(h, src); err != nil {
 		return "", fmt.Errorf("failed to calculate hash: %v", err)
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
@@ -100,20 +109,22 @@ func (p *pathUtils) RenamePackage(oldPath string, newPath string) error {
 }
 
 // SgridTestServer.tar.gz 改名成 SgridTestServer_1234567890.tar.gz
-func (p *pathUtils) RenamePackageWithHash(oldPath string, hash string) error {
+func (p *pathUtils) RenamePackageWithHash(oldPath string, hash string) (string,error) {
 	ext := filepath.Ext(oldPath)
 	newPath := oldPath[:len(oldPath)-len(ext)] + "_" + hash + ext
-	return os.Rename(oldPath, newPath)
+	err := os.Rename(oldPath, newPath)
+	newFileName := filepath.Base(newPath)
+	return newFileName,err
 }
 
-func (p *pathUtils) InitServer(serverInfo *ServerInfo) *command.Command {
+func (p *pathUtils) InitServer(serverInfo *ServerInfo) (*command.Command,error) {
 	logger.PatchUtils.Infof("InitServer: %v", serverInfo)
-	server_cmd := serverInfo.CreateCommand()
+	server_cmd,err := serverInfo.CreateCommand()
 	server_cmd.AppendEnv([]string{
 		fmt.Sprintf("%s=%s", constant.SGRID_TARGET_HOST, serverInfo.BindHost),
 		fmt.Sprintf("%s=%s", constant.SGRID_TARGET_PORT, serverInfo.BindPort),
 	})
-	return server_cmd
+	return server_cmd,err
 }
 
 func (p *pathUtils) StartServer(cmd *command.Command) (int, error) {
@@ -122,4 +133,29 @@ func (p *pathUtils) StartServer(cmd *command.Command) (int, error) {
 	}
 	cmd.SetPid(cmd.GetCmd().Process.Pid)
 	return cmd.GetCmd().Process.Pid, nil
+}
+
+
+func (p *pathUtils)Tar2Dest(src, dest string) error {
+	file, err := os.Open(src)
+	if err != nil {
+		fmt.Println("Open Error", err.Error())
+		return err
+	}
+	defer file.Close()
+	err = unpackit.Unpack(file, dest)
+	if err != nil {
+		fmt.Println("Unpackit Error", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (p *pathUtils)Contains(nodes []int , node int ) (bool) {
+	for _, n := range nodes {
+		if n == node {
+			return true
+		}
+	}
+	return false
 }

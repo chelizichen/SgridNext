@@ -46,6 +46,9 @@ func LoadRoutes(engine *gin.Engine) {
 	engine.POST("/server/updateConfig", handlers.UpdateConfig)
 	// 获取服务组列表
 	engine.POST("/server/getGroupList", handlers.GetGroupList)
+
+	// CGROUP 设置 服务 LIMIt CPU
+	engine.POST("/server/cgroup/setCpuLimit", handlers.SetCpuLimit)
 	// 登录
 	engine.POST("/login", handlers.Login)
 }

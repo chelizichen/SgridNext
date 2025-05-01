@@ -9,7 +9,6 @@ import (
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
-	"sgridnext.com/src/constant"
 )
 
 func CreateLogger(logName string) *logrus.Logger {
@@ -18,11 +17,16 @@ func CreateLogger(logName string) *logrus.Logger {
 	logger.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: time.DateTime,
 	})
-	SGRID_LOG_DIR := filepath.Join(cwd, constant.TARGET_LOG_DIR, constant.MAIN_SERVER_NAME)
-	if SGRID_LOG_DIR == "" {
+
+	logDir := cwd
+	envDir := os.Getenv("SGRID_LOG_DIR")
+	if envDir != "" {
+		logDir = envDir
+	}else {
 		return logger
 	}
-	logPath := filepath.Join(SGRID_LOG_DIR, fmt.Sprintf("%s.log", logName))
+
+	logPath := filepath.Join(logDir, fmt.Sprintf("%s.log", logName))
 	fmt.Println(logPath)
 	// 配置日志轮转
 	writer, _ := rotatelogs.New(
