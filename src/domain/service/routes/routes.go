@@ -12,8 +12,8 @@ func LoadRoutes(engine *gin.Engine) {
 	engine.POST("/server/getServerInfo", handlers.GetServerInfo)
 	// 上传服务包
 	engine.POST("/server/uploadPackage", handlers.CreatePackage)
-	// 上传配置文件
-	engine.POST("/server/createConfig", handlers.CreateConfig)
+	// 上传/修改配置文件
+	engine.POST("/server/upsertConfig", handlers.UpsertConfig)
 	// 创建服务部署节点
 	engine.POST("/server/createServerNode", handlers.CreateServerNode)
 	// 创建服务组
@@ -42,11 +42,8 @@ func LoadRoutes(engine *gin.Engine) {
 	engine.POST("/server/getNodeList", handlers.GetNodeList)
 	// 获取机器一段时间的负载详情
 	engine.POST("/server/getNodeLoadDetail", handlers.GetNodeLoadDetail)
-	// 修改配置文件
-	engine.POST("/server/updateConfig", handlers.UpdateConfig)
 	// 获取服务组列表
 	engine.POST("/server/getGroupList", handlers.GetGroupList)
-
 	// CGROUP 设置 服务 LIMIt CPU
 	engine.POST("/server/cgroup/setCpuLimit", handlers.SetCpuLimit)
 	// CGROUP 设置 服务 LIMIt MEM

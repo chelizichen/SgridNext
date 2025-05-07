@@ -37,23 +37,23 @@ func (p *pathUtils) InitDir(serverName string) error {
 	return nil
 }
 
-// 添加日志文件
-func (p *pathUtils) AddConfigFile(serverName, configName, configContent string) error {
-	cwd, _ := os.Getwd()
-	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
-	return os.WriteFile(configPath, []byte(configContent), 0644)
-}
+// // 添加配置文件
+// func (p *pathUtils) AddConfigFile(serverName, configName, configContent string) error {
+// 	cwd, _ := os.Getwd()
+// 	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
+// 	return os.WriteFile(configPath, []byte(configContent), 0644)
+// }
 
 // 获取配置文件列表
-func (p *pathUtils) GetConfigFileList(serverName string) string {
+func (p *pathUtils) GetConfigFileList(serverName string) []string {
 	cwd, _ := os.Getwd()
 	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName)
 	configList, _ := os.ReadDir(configPath)
-	configListStr := ""
+	var configListRsp []string
 	for _, config := range configList {
-		configListStr += config.Name() + "\n"
+		configListRsp = append(configListRsp, config.Name())
 	}
-	return configListStr
+	return configListRsp
 }
 
 // 获取配置文件内容
@@ -66,25 +66,30 @@ func (p *pathUtils) GetConfigFileContent(serverName, configName string) (string,
 	}
 	return string(configContent), nil
 }
-
-// 更改配置文件内容，将旧配置文件名进行替换成时间戳的形式
-// 原始有一个 sgrid.yml 的配置文件 ，现在新的文件进来了，旧的配置文件名改成 sgrid_1234567890.yml
-// 然后将新的配置文件内容写入到 sgrid.yml 文件中
-func (p *pathUtils) UpdateConfigFileContent(serverName, configName, configContent string) error {
+// 新配置文件进来，先创建时间备份的配置文件
+// 再删除旧的配置文件
+// 最后更新新的配置文件
+func (p *pathUtils) UpdateConfigFileContent(serverName, configName, configContent string) (string,error) {
 	cwd, _ := os.Getwd()
 	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
-	// 如果旧配置文件存在，则重命名为带时间戳的备份文件
-	if _, err := os.Stat(configPath); err == nil {
-		timestamp := time.Now().Unix()
-		ext := filepath.Ext(configName)
-		backupName := configName[:len(configName)-len(ext)] + "_" + fmt.Sprintf("%d", timestamp) + ext
-		backupPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, backupName)
-		if err := os.Rename(configPath, backupPath); err != nil {
-			return fmt.Errorf("failed to backup config: %v", err)
-		}
+	logger.Config.Infof("configPath: %s", configPath)
+	// 备份配置文件
+	timestamp := time.Now().Unix()
+	ext := filepath.Ext(configName)
+	backupName := configName[:len(configName)-len(ext)] + "_" + fmt.Sprintf("%d", timestamp) + ext
+	backupPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, backupName)
+	logger.Config.Infof("backupPath: ", backupPath)
+	err := os.WriteFile(backupPath, []byte(configContent), 0644)
+	if err!= nil {
+		logger.Config.Errorf("failed to backup config: %v", err)
+		return "",err
 	}
-	// 写入新的配置文件内容
-	return os.WriteFile(configPath, []byte(configContent), 0644)
+	err = os.Remove(configPath)
+	if err!= nil {
+		logger.Config.Errorf("failed to remove config: %v", err)
+		// return err
+	}
+	return backupPath,os.WriteFile(configPath, []byte(configContent), 0644)
 }
 
 // 计算文件hash
@@ -157,4 +162,24 @@ func (p *pathUtils)Contains(nodes []int , node int ) (bool) {
 		}
 	}
 	return false
+}
+
+// 回退
+// args | serverName | configName | newConfigName
+// TestServer | sgrid.yml | sgrid_1234567890.yml
+func (p *pathUtils)BackConfigFile(serverName,originConfigName, newConfigName string) error {
+	cwd, _ := os.Getwd()
+	newConfig := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, newConfigName)
+	originPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, originConfigName)
+	if _, err := os.Stat(originPath); err == nil {
+		if err := os.Remove(originPath); err!= nil {
+			return fmt.Errorf("failed to remove originPath config: %v", err)
+		}
+	}
+	bytes,err := os.ReadFile(newConfig)
+	if err!= nil {
+		logger.Config.Errorf("failed to backup config: %v", err)
+		return err
+	}
+	return os.WriteFile(originPath, bytes, 0644)
 }

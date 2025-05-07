@@ -14,7 +14,7 @@ import (
 func CreateLogger(logName string) *logrus.Logger {
 	cwd, _ := os.Getwd()
 	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{
+	logger.SetFormatter(&logrus.TextFormatter{
 		TimestampFormat: time.DateTime,
 	})
 
@@ -47,7 +47,7 @@ func CreateLogger(logName string) *logrus.Logger {
 	// 设置 Hook
 	logger.AddHook(lfshook.NewHook(
 		writerMap,
-		&logrus.JSONFormatter{
+		&logrus.TextFormatter{
 			TimestampFormat: time.DateTime,
 		},
 	))
