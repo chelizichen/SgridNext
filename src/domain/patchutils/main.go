@@ -61,6 +61,7 @@ func (p *pathUtils) GetConfigFileContent(serverName, configName string) (string,
 	cwd, _ := os.Getwd()
 	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
 	configContent, err := os.ReadFile(configPath)
+	logger.Config.Infof("configPath: %s", configPath)
 	if err != nil {
 		return "", err
 	}
@@ -122,15 +123,15 @@ func (p *pathUtils) RenamePackageWithHash(oldPath string, hash string) (string,e
 	return newFileName,err
 }
 
-func (p *pathUtils) InitServer(serverInfo *ServerInfo) (*command.Command,error) {
-	logger.PatchUtils.Infof("InitServer: %v", serverInfo)
-	server_cmd,err := serverInfo.CreateCommand()
-	server_cmd.AppendEnv([]string{
-		fmt.Sprintf("%s=%s", constant.SGRID_TARGET_HOST, serverInfo.BindHost),
-		fmt.Sprintf("%s=%s", constant.SGRID_TARGET_PORT, serverInfo.BindPort),
-	})
-	return server_cmd,err
-}
+// func (p *pathUtils) InitServer(serverInfo *ServerInfo) (*command.Command,error) {
+// 	logger.PatchUtils.Infof("InitServer: %v", serverInfo)
+// 	server_cmd,err := serverInfo.CreateCommand()
+// 	server_cmd.AppendEnv([]string{
+// 		fmt.Sprintf("%s=%s", constant.SGRID_TARGET_HOST, serverInfo.BindHost),
+// 		fmt.Sprintf("%s=%s", constant.SGRID_TARGET_PORT, serverInfo.BindPort),
+// 	})
+// 	return server_cmd,err
+// }
 
 func (p *pathUtils) StartServer(cmd *command.Command) (int, error) {
 	if err := cmd.Start(); err != nil {

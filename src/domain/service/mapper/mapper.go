@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"gorm.io/gorm"
+	"sgridnext.com/src/constant"
+	"sgridnext.com/src/domain/config"
 	"sgridnext.com/src/domain/service/entity"
 	"sgridnext.com/src/logger"
 )
@@ -21,6 +23,7 @@ func LoadMapper(db *gorm.DB) {
 	T_Mapper.db.AutoMigrate(&entity.ServerGroup{})
 	T_Mapper.db.AutoMigrate(&entity.ServerPackage{})
 	T_Mapper.db.AutoMigrate(&entity.ServerNode{})
+	T_Mapper.db.AutoMigrate(&entity.NodeStat{})
 }
 
 type T_PatchServer_Mapper struct {
@@ -43,6 +46,34 @@ func (t *T_PatchServer_Mapper) CreateNode(req *entity.Node) (int, error) {
 		return 0, res.Error
 	}
 	return req.ID, nil
+}
+
+func (t *T_PatchServer_Mapper) GetNodeInfo(id int) (entity.Node, error) {
+	var node entity.Node
+	res := t.db.Debug().Where("id =?", id).First(&node)
+	return node, res.Error
+}
+
+func (t *T_PatchServer_Mapper) UpdateNodePatch(ids []int,patchId int) error {
+	logger.Mapper.Info("更新服务节点：", ids, patchId)
+	if len(ids) == 0 {
+		return nil
+	}
+	err := t.db.Debug().
+		Model(&entity.ServerNode{}).
+		Where("id in ?", ids).
+		Update("patch_id", patchId).
+		Error
+	return err
+}
+
+func (t *T_PatchServer_Mapper) UpdateNodeStatus(id int,status int) error {
+	err := t.db.Debug().
+		Model(&entity.ServerNode{}).
+		Where("id = ?", id).
+		Update("server_node_status", status).
+		Error
+	return err
 }
 
 // 如果有同名的组名，返回错误
@@ -166,4 +197,54 @@ func (t *T_PatchServer_Mapper) GetServerPackageInfo(id int) (entity.ServerPackag
 	var serverPackage entity.ServerPackage
 	res := t.db.Debug().Where("id =?", id).First(&serverPackage)
 	return serverPackage, res.Error
+}
+
+// NODE STAT DAT
+func (t *T_PatchServer_Mapper) SaveNodeStat(req *entity.NodeStat) (int, error) {
+	// 从配置文件中获取nodeId
+	req.NodeId = config.Conf.GetLocalNodeId()
+	req.CreateTime = constant.GetCurrentTime()
+	res := t.db.Debug().Create(req)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return req.Id, nil
+}
+
+type PageGetNodeStatListRsp struct {
+	Total int64 `json:"total"`
+	List  []entity.NodeStat `json:"list"`
+}
+
+func (t *T_PatchServer_Mapper) GetNodeStatList(req *entity.NodeStat,offset int,size int) (PageGetNodeStatListRsp, error) {
+	var rsp PageGetNodeStatListRsp = PageGetNodeStatListRsp{
+		Total: 0,
+		List:  []entity.NodeStat{},
+	}
+	var queryParams []interface{}
+	where := "  1 = 1 "
+	if req.NodeId > 0 {
+		where += " and node_id = ?"
+		queryParams = append(queryParams, req.NodeId)
+	}
+	if req.TYPE > 0 {
+		where += " and type = ? "
+	}
+	if req.ServerId > 0 {
+		where += " and server_id = ? "
+		queryParams = append(queryParams, req.ServerId)
+	}
+	if req.ServerNodeId > 0 {
+		where += " and server_node_id = ? "
+		queryParams = append(queryParams, req.ServerNodeId)
+	}
+	res := t.db.Debug().
+		Model(&entity.NodeStat{}).
+		Where(where,queryParams...).
+		Count(&rsp.Total).
+		Limit(size).
+		Offset(offset).
+		Order("id desc").
+		Find(&rsp.List)
+	return rsp, res.Error
 }

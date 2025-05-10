@@ -21,8 +21,8 @@ export function createServer(data) {
 export function uploadPackage(data) {
   return request({ url: "/server/uploadPackage", data });
 }
-export function createConfig(data) {
-  return request({ url: "/server/createConfig", data });
+export function upsertConfig(data) {
+  return request({ url: "/server/upsertConfig", data });
 }
 export function createServerNode(data) {
   return request({ url: "/server/createServerNode", data });
@@ -45,6 +45,9 @@ export function restartServer(data) {
 export function getServerNodesStatus(data) {
   return request({ url: "/server/getServerNodesStatus", data });
 }
+export function checkServerNodesStatus(data) {
+  return request({ url: "/server/checkServerNodesStatus", data });
+}
 export function getServerNodesLog(data) {
   return request({ url: "/server/getServerNodesLog", data });
 }
@@ -52,7 +55,7 @@ export function getServerNodes(data) {
   return request({ url: "/server/getServerNodes", data });
 }
 export function getServerConfigList(data) {
-  return request({ url: "/server/getServList", data });
+  return request({ url: "/server/getServerConfigList", data });
 }
 export function getServerPackageList(data) {
   return request({ url: "/server/getServerPackageList", data });
@@ -75,22 +78,17 @@ export function getGroupList(data) {
 export function getServerInfo(data) {
   return request({ url: "/server/getServerInfo", data });
 }
+
+export function getConfigContent(data) {
+  return request({ url: "/server/getConfigContent", data });
+}
+
 export function login(data) {
   return request({ url: "/login", data });
 }
 
 
-export function  getServerType(type){
-  if(type == 1){
-      return "Node"
-  }
-  if(type == 2){
-      return "Java"
-  }
-  if(type == 3){
-      return "Binary"
-  }
-}
+
 
 // cgroup
 

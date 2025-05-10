@@ -14,6 +14,8 @@ func LoadRoutes(engine *gin.Engine) {
 	engine.POST("/server/uploadPackage", handlers.CreatePackage)
 	// 上传/修改配置文件
 	engine.POST("/server/upsertConfig", handlers.UpsertConfig)
+	// 获取配置文件内容
+	engine.POST("/server/getConfigContent", handlers.GetConfigContent)
 	// 创建服务部署节点
 	engine.POST("/server/createServerNode", handlers.CreateServerNode)
 	// 创建服务组
@@ -28,6 +30,8 @@ func LoadRoutes(engine *gin.Engine) {
 	engine.POST("/server/restartServer", handlers.RestartServer)
 	// 获取服务节点状态
 	engine.POST("/server/getServerNodesStatus", handlers.GetServerNodesStatus)
+	// 检查服务节点状态
+	engine.POST("/server/checkServerNodesStatus", handlers.CheckServerNodesStatus)
 	// 获取服务节点状态日志
 	engine.POST("/server/getServerNodesLog", handlers.GetServerNodesLog)
 	// 获取服务节点
@@ -48,6 +52,7 @@ func LoadRoutes(engine *gin.Engine) {
 	engine.POST("/server/cgroup/setCpuLimit", handlers.SetCpuLimit)
 	// CGROUP 设置 服务 LIMIt MEM
 	engine.POST("/server/cgroup/setMemLimit", handlers.SetMemoryLimit)
+	// CGROUP 获取 服务 STATUS
 	engine.POST("/server/cgroup/getStatus", handlers.GetStatus)
 	// 登录
 	engine.POST("/login", handlers.Login)

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"sgridnext.com/src/domain/cgroupmanager"
@@ -23,13 +22,8 @@ func SetCpuLimit(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	localNodeId, err := strconv.Atoi(config.Conf.Get("localNodeId"))
-	if err != nil {
-		logger.Server.Infof("SetCpuLimit Error | %v", err)
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点ID失败"})
-		return
-	}
-	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, localNodeId)
+
+	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, config.Conf.GetLocalNodeId())
 	if err != nil {
 		logger.Server.Infof("SetCpuLimit Error | %v", err)
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点绑定服务节点列表信息失败"})
@@ -77,13 +71,8 @@ func GetStatus(ctx *gin.Context) {
 		return
 	}
 	var statsRsp []*cgroupmanager.CgroupStats
-	localNodeId, err := strconv.Atoi(config.Conf.Get("localNodeId"))
-	if err != nil {
-		logger.Server.Infof("GetStatus Error | %v", err)
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点ID失败"})
-		return
-	}
-	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, localNodeId)
+
+	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, config.Conf.GetLocalNodeId())
 	if err != nil {
 		logger.Server.Infof("GetStatus Error | %v", err)
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点绑定服务节点列表信息失败"})
@@ -137,13 +126,7 @@ func DeleteCgroupLimit(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器信息失败", "error": err.Error()})
 		return
 	}
-	localNodeId, err := strconv.Atoi(config.Conf.Get("localNodeId"))
-	if err != nil {
-		logger.Server.Infof("DeleteCgroupLimit Error | %v", err)
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点ID失败"})
-		return
-	}
-	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, localNodeId)
+	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, config.Conf.GetLocalNodeId())
 	if err != nil {
 		logger.Server.Infof("DeleteCgroupLimit Error | %v", err)
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点绑定服务节点列表信息失败"})
@@ -189,13 +172,7 @@ func SetMemoryLimit(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器信息失败", "error": err.Error()})
 		return
 	}
-	localNodeId, err := strconv.Atoi(config.Conf.Get("localNodeId"))
-	if err != nil {
-		logger.Server.Infof("SetMemoryLimit Error | %v", err)
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点ID失败"})
-		return
-	}
-	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, localNodeId)
+	localBindServerNodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId, config.Conf.GetLocalNodeId())
 	if err != nil {
 		logger.Server.Infof("SetMemoryLimit Error | %v", err)
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取本地节点绑定服务节点列表信息失败"})

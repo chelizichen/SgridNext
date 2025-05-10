@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Table, Form, InputNumber, Button, Card, message } from 'antd';
-import { createServerNode, getServerType } from './api';
+import { createServerNode } from './api';
+import { getServerType } from './constant';
 import { Descriptions } from 'antd';
 import _ from 'lodash';
 export default function ScaleModal({ visible, onOk, onCancel, nodes,serverInfo }) {

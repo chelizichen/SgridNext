@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, List, Divider, Tree, Button, Modal, Form, InputNumber, Table, Input, message } from 'antd';
 import ButtonGroup from 'antd/es/button/button-group';
-import {  getGroupList, getNodeList, getServerInfo, getServerList, getServerNodes,getServerType,getStatus } from './api';
+import {  checkServerNodesStatus, getGroupList, getNodeList, getServerConfigList, getServerInfo, getServerList, getServerNodes,getServerNodesStatus,getStatus, stopServer } from './api';
+import { getServerNodeStatusType, getServerType } from './constant';
 import ResourceModal from './ResourceModal';
 import GroupModal from './GroupModal';
 import ServerModal from './ServerModal';
@@ -10,21 +11,31 @@ import DeployModal from './DeployModal';
 import { Descriptions } from 'antd';
 import _ from 'lodash'
 import AddNodeModal from './AddNodeForm';
+import UploadConfigModal from './UploadConfigModal';
+
 export default function Console(){
+    const [messageApi, contextHolder] = message.useMessage();
     const [resourceModalVisible, setResourceModalVisible] = useState(false);
-    const [form] = Form.useForm();
     const [groupModalVisible, setGroupModalVisible] = useState(false);
     const [serverModalVisible, setServerModalVisible] = useState(false);
     const [scaleModalVisible, setScaleModalVisible] = useState(false);
     const [deployModalVisible, setDeployModalVisible] = useState(false);
+    const [serverConfigVisible,setServerConfigVisible] = useState(false);
     const [addNodeVisible, setAddNodeVisible] = useState(false);
+
+    const [form] = Form.useForm();
     const [groupForm] = Form.useForm();
     const [serverForm] = Form.useForm();
     const [groupOptions, setGroupOptions] = useState([]);
     const [selectNodes, setSelectNodes] = useState([])
     const handleRefresh = () => {
-        // 这里可以添加实际的刷新逻辑
-        console.log('刷新数据');
+        setTimeout(()=>{
+            handleTreeNodeClick({
+                isGroup:false,
+                key: serverInfo.server_id
+            })
+            messageApi.info('刷新成功');
+        },0)
     };
     
     const [treeData, setTreeData] = useState([]);
@@ -55,13 +66,21 @@ export default function Console(){
         "exec_path":""
     })
     let [serverNodes,setServerNodes] = useState([]);
-    // 1. 拿服务信息
-    // 2. 拿节点信息
+    let [serverConfigList,setServerConfigList] = useState([]);
+
+    const [serverNodePage,setServerNodePage] = useState({
+        offset:1,
+        size:10
+    })
+    const [serverNodeStatusList,setServerNodeStatusList] = useState([])
+    const [serverNodeStatusTotal,setServerNodeStatusTotal] = useState(0)
+
     function handleTreeNodeClick(node){
         if(node.isGroup){
             return;
         }
-        getServerInfo({id:node.key}).then(data => {
+        let serverId = node.key;
+        getServerInfo({id:serverId}).then(data => {
             setServerInfo({
                 "server_name":data.data.ServerName,
                 "server_id":data.data.ID,
@@ -71,18 +90,39 @@ export default function Console(){
                 "create_time":data.data.CreateTime
             })
         })
-        getServerNodes({id:node.key}).then(res=>{
+        getServerNodes({id:serverId}).then(res=>{
             if(!res.data){
                 res.data = []
             }
             setServerNodes(res.data);
             console.log('res',res);
             res.data.map(v=>{
-                getStatus({nodeId:v.id}).then(res=>{
-                    console.log('res',res);
+                getStatus({nodeId:v.id,serverId:serverId}).then(res=>{
+                    console.log('getStatus.res',res);
                 })
             })
+            checkServerNodesStatus({
+                server_id:serverId,
+                server_node_ids:res.data.map(v=>v.id),
+            }).then(res=>{
+                console.log('getStatus.res',res);
+            })
+
         });
+
+        getServerConfigList({serverId:serverId}).then(res=>{
+            setServerConfigList(res.data || []);
+            console.log('getServerConfigList >> ',res);
+        })
+
+        getServerNodesStatus({
+            server_id:serverId,
+            offset:serverNodePage.offset,
+            size:serverNodePage.size
+        }).then(res=>{
+            setServerNodeStatusTotal(res.data.total)
+            setServerNodeStatusList(res.data.list);
+        })
 
     }
 
@@ -118,8 +158,64 @@ export default function Console(){
           name: record.name,
         }),
       };
+
+    const [fileName,setFileName] = useState('');
+    function handleUpsertConfig(STATE,fileName){
+        // 关闭
+        if(STATE === -1){
+            setServerConfigVisible(false);
+            return
+        }
+        // 创建，不做多的
+        if(STATE === 2){
+            setServerConfigVisible(true);
+            return
+        }
+        // 查看
+        if(STATE == 1){
+            setServerConfigVisible(true);
+            setFileName(fileName);
+        }
+    }
+
+    function handleStopServerNodes(){
+        if(selectNodes.length === 0){
+            messageApi.warning('请选择至少一个节点');
+            return
+        }
+        let nodeIds = selectNodes.map(v=>v.id);
+        stopServer({
+            nodeIds,
+            serverId:serverInfo.server_id
+        }).then(res=>{
+            if(res.success){
+                messageApi.success('停止成功');
+                handleRefresh();
+            }else{
+                messageApi.error(res.msg);
+            }
+        })
+        console.log('nodeIds',nodeIds);
+    }
+
+    const handleSetResourceModalVisible = () => {
+        if (selectNodes.length === 0) {
+            messageApi.warning('请选择至少一个节点');
+            return;
+        }
+        setResourceModalVisible(true);
+    }
+
+    const handleSetDeployModalVisible = () => {
+        if (selectNodes.length === 0) {
+            messageApi.warning('请选择至少一个节点');
+            return;
+        }
+        setDeployModalVisible(true);
+    }
     return (
         <div style={{ padding: 24 }}>
+            {contextHolder}
             <Row gutter={16}>
                 <Col span={8}>
                     <Card title="服务总揽"
@@ -136,12 +232,23 @@ export default function Console(){
                         />
                     </Card>
                     <Divider />
-                    <Card title="配置文件" extra={<Button onClick={handleRefresh}>刷新</Button>}>
+                    <Card title="配置文件" extra={
+                        <ButtonGroup>
+                            <Button onClick={handleRefresh}>刷新</Button>
+                            <Button onClick={()=>handleUpsertConfig(2)}>上传</Button>
+                        </ButtonGroup>
+                    }>
                         <List
-                            dataSource={logData}
+                            dataSource={serverConfigList}
                             renderItem={item => (
                                 <List.Item>
-                                    [{item.time}] [{item.status}] {item.message}
+                                    <div>
+                                        {item}
+                                    </div>
+                                    <ButtonGroup size={"small"} style={{float:'right'}}>
+                                        <Button onClick={()=>handleUpsertConfig(1,item)} >查看</Button>
+                                        <Button danger>删除</Button>
+                                    </ButtonGroup>
                                 </List.Item>
                             )}
                         />
@@ -185,17 +292,10 @@ export default function Console(){
                         <div>
                             <Button onClick={handleRefresh}>刷新</Button>
                             <ButtonGroup style={{marginLeft:"16px"}}>
-                                <Button onClick={() => {
-                                    if (serverInfo) {
-                                        setDeployModalVisible(true);
-                                    } else {
-                                        console.log('111');
-                                        
-                                        message.warning('请先选择至少一个节点');
-                                    }
-                                }}>部署</Button>
-                                <Button onClick={() => setResourceModalVisible(true)}>资源配置</Button>
+                                <Button onClick={handleSetDeployModalVisible}>部署</Button>
+                                <Button onClick={handleSetResourceModalVisible}>资源配置</Button>
                                 <Button onClick={() => setScaleModalVisible(true)}>扩容</Button>
+                                <Button onClick={() => handleStopServerNodes()}>停止</Button>
                                 <Button onClick={handleRefresh}>删除</Button>
                             </ButtonGroup>
                         </div>
@@ -203,10 +303,20 @@ export default function Console(){
                     }>
                         <Table 
                             rowSelection={Object.assign({ type: "checkbox" }, rowSelection)}
+                            bordered
                             columns={[
                                 { title: '主机地址', dataIndex: 'host', key: 'host' },
                                 { title: '端口号', key: 'port', dataIndex:"port" },
                                 { title: '创建时间', dataIndex: 'node_create_time', key: 'node_create_time' },
+                                { title: '状态', key: 'server_node_status', dataIndex:"server_node_status",render:(text,record)=>{
+                                    if(record.server_node_status === 1){
+                                        return <span style={{color:'green'}}>online</span>
+                                    }
+                                    if(record.server_node_status === 2){
+                                        return <span style={{color:'red'}}>offline</span>
+                                    }
+                                    return <span style={{color:'black'}}>已删除</span>
+                                }},
                                 { title: '版本号', key: 'patch_id', dataIndex:"patch_id" },
                             ]}
                             dataSource={serverNodes}
@@ -217,10 +327,34 @@ export default function Console(){
                     <Divider />
                     <Card title="服务状态日志" bo={false} extra={<Button onClick={handleRefresh}>刷新</Button>}>
                         <List
-                            dataSource={logData}
+                            pagination={{
+                                pageSize: 10,
+                                total: serverNodeStatusTotal,
+                                showSizeChanger: true,
+                                onChange: (page, pageSize) => {
+                                    let offset = (page - 1) * pageSize;
+                                    setServerNodePage({
+                                        offset:offset,
+                                        size:pageSize
+                                    })
+                                    getServerNodesStatus({
+                                        server_id:serverInfo.server_id,
+                                        offset:offset,
+                                        size:pageSize
+                                    }).then(res=>{
+                                        setServerNodeStatusTotal(res.data.total)
+                                        setServerNodeStatusList(res.data.list);
+                                    })
+                                }
+                            }}
+                            bordered
+                            dataSource={serverNodeStatusList}
                             renderItem={item => (
                                 <List.Item>
-                                    [{item.time}] [{item.status}] {item.message}
+                                    {item.CreateTime}-{getServerNodeStatusType(item.TYPE)}-
+                                    <span style={
+                                        item.TYPE === 2 ? {color:'red'} : {color:'black'}
+                                    } >{item.Content}</span>
                                 </List.Item>
                             )}
                         />
@@ -236,6 +370,7 @@ export default function Console(){
                 onCancel={() => setResourceModalVisible(false)}
                 form={form}
                 nodes={selectNodes}
+                serverId={serverInfo.server_id}
             />
             <GroupModal
                 visible={groupModalVisible}
@@ -294,6 +429,18 @@ export default function Console(){
                 onCancel={() => setAddNodeVisible(false)}
                 form={form}
             ></AddNodeModal>
+            <UploadConfigModal 
+                visible={serverConfigVisible} 
+                serverId={serverInfo.server_id}
+                onCancel={()=>{
+                    handleUpsertConfig(-1);
+                }}
+                onOk={()=>{
+                    handleUpsertConfig(-1);
+                }}
+                fileName={fileName}
+            >
+            </UploadConfigModal>
         </div>
     );
 }

@@ -15,13 +15,9 @@ func (cm *centerManager) AddCommand(nodeId int, cmd *Command) {
 	cm.commands[nodeId] = cmd
 }
 func (cm *centerManager) RemoveCommand(nodeId int) {
-	cmd := cm.commands[nodeId]
-	err := cmd.Stop().Error()
-	if err != "" {
-		panic(err)
-	}
 	delete(cm.commands, nodeId)
 }
 func (cm *centerManager) GetCommand(nodeId int) *Command {
 	return cm.commands[nodeId]
 }
+

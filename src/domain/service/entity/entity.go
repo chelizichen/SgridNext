@@ -47,3 +47,23 @@ type ServerPackage struct {
 	FileName   string `gorm:"column:file_name;type:varchar(255)"`
 	CreateTime string `gorm:"column:create_time;type:varchar(64)"`
 }
+
+const (
+	TYPE_SUCCESS = 1
+	TYPE_ERROR  = 2
+	TYPE_INFO   = 3
+	TYPE_WARN   = 4
+	TYPE_PATCH  = 5
+	TYPE_CHECK  = 6
+)
+
+type NodeStat struct {
+	Id           int    `gorm:"column:id;primaryKey;autoIncrement"`
+	NodeId       int    `gorm:"column:node_id"`
+	ServerName   string `gorm:"column:server_name;type:varchar(255)"`
+	ServerId     int    `gorm:"column:server_id"`
+	ServerNodeId int    `gorm:"column:server_node_id"`
+	TYPE         int    `gorm:"column:type"`
+	Content      string `gorm:"column:content;type:text"`
+	CreateTime   string `gorm:"column:create_time;type:varchar(64)"`
+}

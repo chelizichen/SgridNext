@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"sgridnext.com/src/db"
 	"sgridnext.com/src/domain/config"
-	"sgridnext.com/src/domain/db"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/domain/service/routes"
 )

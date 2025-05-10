@@ -2,7 +2,7 @@
 
 # if permission denied
 # run script with ` chmod +x build.sh `
-readonly ServerName="SgridNext"
+readonly ServerName="app"
 
 rm -r dist
 mkdir -p dist

@@ -82,10 +82,17 @@ func CreatePackage(ctx *gin.Context) {
 		Commit:     commit,
 		FileName:   newFileName,
 	}
-	if _, err := mapper.T_Mapper.CreateServerPackage(serverPackage); err != nil {
+	rsp, err := mapper.T_Mapper.CreateServerPackage(serverPackage);
+	if  err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "创建服务包失败", "error": err.Error()})
 		return
 	}
+	mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+		ServerName: serverName,
+		ServerId:   serverId,
+		TYPE:       entity.TYPE_PATCH,
+		Content:    fmt.Sprintf("已部署服务包 %s | 版本号 %d", serverName, rsp),
+	})
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "创建服务包成功", "hash": hash})
 }
 
@@ -224,12 +231,39 @@ func DeployServer(ctx *gin.Context) {
 		if !patchutils.T_PatchUtils.Contains(req.NodeIds, node.Id) {
 			continue
 		}
+		mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+			ServerName: serverInfo.ServerName,
+			ServerId:   serverInfo.ID,
+			TYPE:       entity.TYPE_INFO,
+			ServerNodeId: node.Id,
+			Content:    fmt.Sprintf(
+				"开始部署服务器 %s | 节点 %d | 版本号 | %d | 端口号 %d", 
+			serverInfo.ServerName,
+				node.Id,
+				req.PackageId,
+				node.Port,
+			),
+		})
 		logger.Server.Infof("DeployServer | node | %v", node)
 		currentCommand := command.CenterManager.GetCommand(node.Id)
 		if currentCommand != nil {
 			err := currentCommand.Stop()
 			if err!= nil {
 				ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "停止服务器失败", "error": err.Error()})
+				mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+					ServerName: serverInfo.ServerName,
+					ServerId:   serverInfo.ID,
+					TYPE:       entity.TYPE_ERROR,
+					ServerNodeId: node.Id,
+					Content:    fmt.Sprintf(
+						"部署服务器失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", 
+					serverInfo.ServerName,
+						node.Id,
+						req.PackageId,
+						node.Port,
+						err.Error(),
+					),
+				})
 				return
 			}
 		}
@@ -250,24 +284,62 @@ func DeployServer(ctx *gin.Context) {
 			return
 		}
 		args := cmd.GetCmd().Args
-		logger.Server.Infof("DeployServer | args | %v", args)
 		cmd.AppendEnv([]string{
 			fmt.Sprintf("%s=%s", constant.SGRID_TARGET_HOST,node.Host),
-			fmt.Sprintf("%s=%s", constant.SGRID_TARGET_PORT,node.Port),
+			fmt.Sprintf("%s=%v", constant.SGRID_TARGET_PORT,node.Port),
 		})
+		logger.Server.Infof("DeployServer | args | %v", args)
 		err = cmd.Start()
 		command.CenterManager.AddCommand(node.Id, cmd)
 		if err!= nil {
+			mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+				ServerName: serverInfo.ServerName,
+				ServerId:   serverInfo.ID,
+				TYPE:       entity.TYPE_ERROR,
+				ServerNodeId: node.Id,
+				Content:    fmt.Sprintf(
+					"启动服务器失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", 
+				serverInfo.ServerName,
+					node.Id,
+					req.PackageId,
+					node.Port,
+					err.Error(),
+				),
+			})
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "启动服务器失败", "error": err.Error()})
 			return
 		}
 		err = command.UseCgroup(cmd)
-		if err!= nil {
+		if err != nil {
+			mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+				ServerName: serverInfo.ServerName,
+				ServerId:   serverInfo.ID,
+				TYPE:       entity.TYPE_ERROR,
+				ServerNodeId: node.Id,
+				Content:    fmt.Sprintf(
+					"设置cgroup失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", 
+				serverInfo.ServerName,
+					node.Id,
+					req.PackageId,
+					node.Port,
+					err.Error(),
+				),
+			})
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "设置cgroup失败", "error": err.Error()})
 			return
 		}
 		logger.Server.Infof("DeployServer | cmd | %v", cmd)
-		
+	}
+	mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+		ServerName: serverInfo.ServerName,
+		ServerId:   serverInfo.ID,
+		TYPE:       entity.TYPE_SUCCESS,
+		Content:    fmt.Sprintf("部署服务器成功 %s | 节点 %s | 版本号 %d", serverInfo.ServerName, req.NodeIds, req.PackageId),
+	})
+	err = mapper.T_Mapper.UpdateNodePatch(req.NodeIds, req.PackageId)
+	if err!= nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新服务器节点版本号失败", "error": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "部署服务器成功"})
 }
@@ -281,14 +353,34 @@ func StopServer(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
+	serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
+	if err!= nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器信息失败", "error": err.Error()})
+		return
+	}
+
 	for _, nodeId := range req.NodeIds {
 		currentCommand := command.CenterManager.GetCommand(nodeId)
 		if currentCommand!= nil {
 			err := currentCommand.Stop()
 			if err!= nil {
+				mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+					ServerName: serverInfo.ServerName,
+					ServerId:   serverInfo.ID,
+					TYPE:       entity.TYPE_ERROR,
+					Content:    fmt.Sprintf("关停服务失败 %s | 节点 %s | 原因 %s", serverInfo.ServerName, req.NodeIds,err.Error()),
+					ServerNodeId: nodeId,
+				})
 				ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "停止服务器失败", "error": err.Error()})
 				return
 			}
+			command.CenterManager.RemoveCommand(nodeId)
+			mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
+				ServerName: serverInfo.ServerName,
+				ServerId:   serverInfo.ID,
+				TYPE:       entity.TYPE_SUCCESS,
+				Content:    fmt.Sprintf("关停服务 %s | 节点 %s", serverInfo.ServerName, req.NodeIds),
+			})
 		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "停止服务器成功"})
@@ -299,9 +391,7 @@ func RestartServer(ctx *gin.Context) {
 
 }
 
-func GetServerNodesStatus(ctx *gin.Context) {
 
-}
 
 func GetServerNodesLog(ctx *gin.Context) {
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"strconv"
 
 	"sgridnext.com/src/logger"
 )
@@ -29,6 +30,14 @@ func (c Config) Get(args... string) string {
 	return ""
 }
 
+func (c Config) GetLocalNodeId() int {
+	nodeId,err := strconv.Atoi(c.Get("nodeIndex"))
+	if err!= nil {
+		panic("本地节点ID获取失败")
+	}
+	return nodeId
+}
+
 var Conf = make(Config)
 
 func LoadConfig(fileName string)Config{
@@ -50,3 +59,4 @@ func ReadJson(filePath string)Config {
 
 	return result
 }
+

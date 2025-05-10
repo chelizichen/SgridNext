@@ -17,3 +17,42 @@
 在 web 目录下打包即可
 
 执行 npm run build
+
+### Systemctl 启动
+
+创建指定systemctl 启动文件 /usr/lib/systemd/system/sgridnext.service
+ExecStart 为启动文件
+WorkingDirectory 为工作目录
+Environment 为环境变量
+
+-- 具体配置参考官方文档
+
+配置完之后 执行
+
+````shell
+# 启动
+systemctl start sgridnext
+# 重启
+systemctl restart sgridnext
+# 停止
+systemctl stop sgridnext
+# 查看状态
+systemctl status sgridnext
+````
+
+````s
+[Unit]
+Description = sgrid next,A cloud platform for grid computing
+
+[Service]
+Type = simple
+ExecStart = /usr/sgridnext/sgridnext
+WorkingDirectory = /usr/sgridnext
+Environment=PATH=/usr/bin:/usr/local/bin
+Restart = no
+````
+
+### 创建节点
+
+1. 节点内网地址 通过 ip show addr etho0 查看
+2. 节点外网地址 通过 curl ifconfig.me 查看

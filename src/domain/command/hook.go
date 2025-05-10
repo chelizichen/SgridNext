@@ -16,6 +16,7 @@ func UseCgroup(c *Command) error {
 		logger.Hook_Cgroup.Errorf("failed to create cgroup manager | server %s | error : %s", cgName, err.Error())
 		return err
 	}
+	logger.Hook_Cgroup.Infof("load cgroup manager | server %s", cgName)
 	err = mgr.AddProcess(c.GetPid())
 	if err != nil {
 		logger.Hook_Cgroup.Errorf("failed to add process to cgroup | server %s | error : %s", cgName, err.Error())

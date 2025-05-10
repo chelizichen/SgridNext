@@ -17,6 +17,10 @@ type CgroupManager struct {
 	isV2    bool
 }
 
+const (
+	defaultV2MountPath = "/sys/fs/cgroup/system.slice"
+)
+
 func (cm *CgroupManager) GetCgroup() interface{} {
 	if cm.isV2 {
 		return cm.cgroup2
@@ -27,22 +31,34 @@ func (cm *CgroupManager) GetCgroup() interface{} {
 func LoadCgroupManager(name string) (*CgroupManager, error) {
 	// 检测 cgroup 版本
 	isV2, err := isCgroupV2()
-	if err!= nil {
+	if err != nil {
+		logger.Cgroup.Errorf("failed to detect cgroup version: %v", err)
 		return nil, fmt.Errorf("failed to detect cgroup version: %v", err)
 	}
+	logger.Cgroup.Infof("detect cgroup version is v2: %v", isV2)
 	if isV2 {
 		// 使用 cgroup v2
 		groupPath := filepath.Join("/", name)
-		manager, err := cgroupsv2.LoadManager("/sys/fs/cgroup/system.slice",groupPath)
-		if err!= nil {
+		logger.Cgroup.Infof("debug | load cgroup groupPath | %s ", groupPath)
+		manager, err := cgroupsv2.LoadManager(defaultV2MountPath,groupPath)
+		if err != nil {
+			logger.Cgroup.Errorf("failed to load cgroup v2 manager: %v", err)
 			return nil, fmt.Errorf("failed to load cgroup v2 manager: %v", err)
 		}
+		targetDir := filepath.Join(defaultV2MountPath,groupPath)
+		if _, err := os.Stat(targetDir); err != nil {
+			logger.Cgroup.Errorf("failed to stat cgroup v2 target directory: %v", err)
+			return nil,err
+		}
+		logger.Cgroup.Infof("load cgroup %s ", name)
 		return &CgroupManager{cgroup2: manager, isV2: true}, nil
 	}
 	// 使用 cgroup v1
 	mountPath := cgroups.Slice("system.slice", name)
 	control, err := cgroups.Load(cgroups.Systemd, mountPath)
+	logger.Cgroup.Infof("load cgroup mountPath | %s ", mountPath)
 	if err!= nil {
+		logger.Cgroup.Errorf("failed to load cgroup v1 manager: %v", err)
 		return nil, fmt.Errorf("failed to load cgroup v1 manager: %v", err)
 	}
 	return &CgroupManager{cgroup: control, isV2: false}, nil
@@ -52,9 +68,12 @@ func NewCgroupManager(name string) (*CgroupManager, error) {
 	// 先加载看有没有 Cgroup目录
 	manger, err := LoadCgroupManager(name)
 	if err == nil {
+		if manger.isV2{
+			// if manger.cgroup2
+		}
+		logger.Cgroup.Infof("cgroup %s already exists", name)
 		return manger, nil
 	}
-
 	// 检测 cgroup 版本
 	isV2, err := isCgroupV2()
 	if err != nil {
@@ -64,8 +83,9 @@ func NewCgroupManager(name string) (*CgroupManager, error) {
 	if isV2 {
 		// 使用 cgroup v2
 		groupPath := filepath.Join("/", name)
-		manager, err := cgroupsv2.NewManager("/sys/fs/cgroup/system.slice", groupPath, &cgroupsv2.Resources{})
+		manager, err := cgroupsv2.NewManager(defaultV2MountPath, groupPath, &cgroupsv2.Resources{})
 		if err != nil {
+			logger.Cgroup.Errorf("failed to create cgroup v2 manager: %v", err)
 			return nil, fmt.Errorf("failed to create cgroup v2 manager: %v", err)
 		}
 		return &CgroupManager{cgroup2: manager, isV2: true}, nil
@@ -127,6 +147,7 @@ func (cm *CgroupManager) SetMemoryLimit(memoryLimit int64) error {
 }
 
 func (cm *CgroupManager) AddProcess(pid int) error {
+	logger.Cgroup.Infof("add process %d to cgroup |  isV2 %s", pid,cm.isV2)
 	if cm.isV2 {
 		return cm.cgroup2.AddProc(uint64(pid))
 	}
@@ -175,5 +196,5 @@ type SgridCgroup struct {
 }
 
 func (s *SgridCgroup)GetCgroupName() string {
-	return fmt.Sprintf("sgrid-%s-%s", s.ServerName, s.NodeId)
+	return fmt.Sprintf("sgrid-%s-%d", s.ServerName, s.NodeId)
 }
