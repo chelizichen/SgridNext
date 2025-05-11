@@ -128,11 +128,13 @@ export default function Console(){
             }
             setServerNodes(res.data);
             console.log('res',res);
-            res.data.map(v=>{
-                getStatus({nodeId:v.id,serverId:serverId}).then(res=>{
-                    console.log('getStatus.res',res);
-                })
+            getStatus({
+                nodeIds:res.data.map(v=>v.id),
+                serverId:serverId
+            }).then(res=>{
+                console.log('getStatus.res',res);
             })
+
             checkServerNodesStatus({
                 server_id:serverId,
                 server_node_ids:res.data.map(v=>v.id),
