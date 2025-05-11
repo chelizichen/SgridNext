@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"syscall"
 
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/logger"
@@ -106,6 +107,27 @@ func (c *Command) CheckStat() (pid int,alive bool,err error) {
 	_, err = os.FindProcess(pid)
 	if err != nil {
 		return 0,false,fmt.Errorf("find process failed: %w", err)
+	}
+
+	// 某个进程OOM了，但是os.FindProcess不会报错，所以需要判断进程是否还在
+	// 判断该进程是否已死
+	if err := c.cmd.Process.Signal(syscall.Signal(0)); err != nil {
+		logger.Hook_Cgroup.Infof("debug | 进程检测 |process %d ", pid)
+	    return 0, false, fmt.Errorf("check process status failed: %w", err)
+	}
+	
+	// 新增僵尸进程检测
+	var status syscall.WaitStatus
+	_, err = syscall.Wait4(c.cmd.Process.Pid, &status, syscall.WNOHANG, nil)
+	if err != nil {
+		logger.Hook_Cgroup.Infof("debug | 进程僵尸状态监测失败 |process %d exited or in zombie state", pid)
+	    return 0, false, fmt.Errorf("wait4 failed: %w", err)
+	}
+	
+	// 进程已退出或处于僵尸状态
+	if status.Exited() || status.StopSignal() == syscall.SIGKILL {
+		logger.Hook_Cgroup.Infof("debug | 进程僵尸状态 |process %d exited or in zombie state", pid)
+	    return pid, true, nil
 	}
 	return pid,true,nil
 }

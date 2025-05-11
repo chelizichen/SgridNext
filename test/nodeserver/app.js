@@ -9,9 +9,33 @@ const host = process.env.SGRID_TARGET_HOST || '0.0.0.0'
 const conf = loadConfig()
 logger.data.info('conf',conf);
 
+
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
+
+function fib(n) {
+  if (n === 0) return 0
+  if (n === 1) return 1
+  return fib(n - 1) + fib(n - 2)
+}
+
+app.get('/fib', (req, res) => {
+  let n = req.query.n || 10
+  let result = fib(n)
+  res.send(result)
+})
+
+
+app.get('/bigmemmory', (req, res) => {
+  let n = req.query.n || 10
+  let result = fib(n)
+  let bigmemory = new Array(1000000000)
+  bigmemory.fill(1)
+  result = result + bigmemory.length
+  res.send(result)  
+})
+
 logger.data.info('host %s',host);
 logger.data.info('port %s',port);
 

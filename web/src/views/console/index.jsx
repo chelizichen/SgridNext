@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, List, Divider, Tree, Button, Modal, Form, InputNumber, Table, Input, message } from 'antd';
 import ButtonGroup from 'antd/es/button/button-group';
-import {  checkServerNodesStatus, getGroupList, getNodeList, getServerConfigList, getServerInfo, getServerList, getServerNodes,getServerNodesStatus,getStatus, stopServer } from './api';
+import {  checkServerNodesStatus, getGroupList, getNodeList, getServerConfigList, getServerInfo, getServerList, getServerNodes,getServerNodesStatus,getStatus, restartServer, stopServer } from './api';
 import { getServerNodeStatusType, getServerType } from './constant';
 import ResourceModal from './ResourceModal';
 import GroupModal from './GroupModal';
@@ -12,6 +12,58 @@ import { Descriptions } from 'antd';
 import _ from 'lodash'
 import AddNodeModal from './AddNodeForm';
 import UploadConfigModal from './UploadConfigModal';
+
+
+const ServerNodesColumns = [
+    { title: '主机地址', dataIndex: 'host', key: 'host' },
+    { title: '端口号', key: 'port', dataIndex:"port" },
+    { title: '状态', key: 'server_node_status', dataIndex:"server_node_status",render:(text,record)=>{
+        if(record.server_node_status === 1){
+            return <span style={{color:'green'}}>online</span>
+        }
+        if(record.server_node_status === 2){
+            return <span style={{color:'red'}}>offline</span>
+        }
+        return <span style={{color:'black'}}>已删除</span>
+    }},
+    { title: '版本号', key: 'patch_id', dataIndex:"patch_id" },
+    { title: '节点资源限制', key: 'id', dataIndex:"id" ,
+        render:(text,record)=>{
+            return (
+               <>
+                    <span>MAX_CPU: {record.cpu_limit} (CORE)</span>
+                    <br />
+                    <span>MAX_MEMORY: {record.memory_limit} (M)</span>
+                    <br/>
+               </>
+            )
+        }
+    },
+    { title: '创建时间', dataIndex: 'node_create_time', key: 'node_create_time' },
+
+]
+
+const NodeColumns = [
+    { title: '主机地址', dataIndex: 'Host', key: 'Host' },
+    { title: '状态', key:'NodeStatus', dataIndex:"NodeStatus",render:(text,record)=>{
+        if(record.NodeStatus === 1){
+            return <span style={{color:'green'}}>online</span>
+        }
+        if(record.NodeStatus === 2){
+            return <span style={{color:'red'}}>offline</span>
+        }
+    }},
+    { title: '节点配置', key: 'ID', dataIndex: 'ID', render: (text, record) => {
+        return (
+            <div>
+                <span>CPU: {record.Cpus} (CORE)</span>
+                <br />
+                <span>MEMORY: {record.Memory} (G)</span>
+            </div>
+        )
+    } },
+    { title: '创建时间', key: 'CreateTime', dataIndex: 'CreateTime' },
+]
 
 export default function Console(){
     const [messageApi, contextHolder] = message.useMessage();
@@ -38,25 +90,6 @@ export default function Console(){
         },0)
     };
     
-    const [treeData, setTreeData] = useState([]);
-    function initServerTreeData() {
-        getServerList().then(data => {
-            console.log('data',data);
-            let serverGroup = _.groupBy(data.data, 'group_name');
-            let treeStructure = Object.keys(serverGroup).map(groupName => ({
-                title: groupName,
-                key: groupName,
-                isGroup: true,
-                children: serverGroup[groupName].map(server => ({
-                    title: server.server_name,
-                    key: server.server_id,
-                    isGroup: false
-                }))
-            }));
-            setTreeData(treeStructure);
-            console.log('treeStructure', treeStructure);
-        });
-    }
     let [serverInfo,setServerInfo] = useState({
         "server_name":"",
         "server_id":"",
@@ -67,7 +100,6 @@ export default function Console(){
     })
     let [serverNodes,setServerNodes] = useState([]);
     let [serverConfigList,setServerConfigList] = useState([]);
-
     const [serverNodePage,setServerNodePage] = useState({
         offset:1,
         size:10
@@ -126,11 +158,8 @@ export default function Console(){
 
     }
 
-    useEffect(() => {
-        initServerTreeData()
-    },[])
-
     const [nodes,setNodes] = useState([])
+    const [treeData, setTreeData] = useState([]);
     function initNodes(){
         getNodeList().then(data => {
             if(data.success){
@@ -138,16 +167,34 @@ export default function Console(){
             }
         })
     }
-    useEffect(() => {
+    function initServerTreeData() {
+        getServerList().then(data => {
+            console.log('data',data);
+            let serverGroup = _.groupBy(data.data, 'group_name');
+            let treeStructure = Object.keys(serverGroup).map(groupName => ({
+                title: groupName,
+                key: groupName,
+                isGroup: true,
+                children: serverGroup[groupName].map(server => ({
+                    title: server.server_name,
+                    key: server.server_id,
+                    isGroup: false
+                }))
+            }));
+            setTreeData(treeStructure);
+            console.log('treeStructure', treeStructure);
+        });
+    }
+
+    function initServersAndNodes(){
+        initServerTreeData()
         initNodes()
+    }
+
+    useEffect(() => {
+        initServersAndNodes()
     },[])
 
-    // 示例日志数据
-    const logData = [
-        { time: '10:30', status: '运行中', message: '节点1启动完成' },
-        { time: '10:25', status: '警告', message: '节点2负载过高' },
-        { time: '10:20', status: '正常', message: '节点3连接成功' },
-    ];
     const rowSelection = {
         onChange: (selectedRowKeys, selectedRows) => {
           console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
@@ -198,6 +245,28 @@ export default function Console(){
         console.log('nodeIds',nodeIds);
     }
 
+    function handleRestartServerNodes(){
+        if(selectNodes.length === 0){
+            messageApi.warning('请选择至少一个节点');
+            return
+        }
+        const serverNodeIds = selectNodes.map(v=>v.id);
+        const serverId = serverInfo.server_id;
+        console.log('nodeIds',serverNodeIds);
+        restartServer({
+            serverNodeIds,
+            serverId,
+            packgeId:0,
+        }).then(res=>{
+            if(res.success){
+                messageApi.success('重启成功');
+                handleRefresh();
+            }else{
+                messageApi.error(res.msg);
+            }
+        })
+    }
+
     const handleSetResourceModalVisible = () => {
         if (selectNodes.length === 0) {
             messageApi.warning('请选择至少一个节点');
@@ -234,7 +303,7 @@ export default function Console(){
                     <Divider />
                     <Card title="配置文件" extra={
                         <ButtonGroup>
-                            <Button onClick={handleRefresh}>刷新</Button>
+                            <Button onClick={initServersAndNodes}>刷新</Button>
                             <Button onClick={()=>handleUpsertConfig(2)}>上传</Button>
                         </ButtonGroup>
                     }>
@@ -254,23 +323,21 @@ export default function Console(){
                         />
                     </Card>
                     <Divider />
-                    <Card title="节点状态" extra={
+                    <Card title="节点列表" extra={
                         <>
                             <ButtonGroup>
-                                <Button onClick={handleRefresh}>刷新</Button>
+                                <Button onClick={initServersAndNodes}>刷新</Button>
                                 <Button onClick={()=>setAddNodeVisible(true)}>新增节点</Button>
                             </ButtonGroup>
                         </>
 
                     }>
-                        <List
-                            dataSource={logData}
-                            renderItem={item => (
-                                <List.Item>
-                                    [{item.time}] [{item.status}] {item.message}
-                                </List.Item>
-                            )}
-                        />
+                        <Table
+                            bordered
+                            dataSource={nodes}
+                            columns={NodeColumns}
+                        >
+                        </Table>
                     </Card>
                 </Col>
                 <Col span={16}>
@@ -288,40 +355,25 @@ export default function Console(){
                         )}
                     </Card>
                     <Divider />
-                    <Card title="节点列表" variant={false} extra={
+                    <Card title="服务节点列表" variant={false} extra={
                         <div>
                             <Button onClick={handleRefresh}>刷新</Button>
                             <ButtonGroup style={{marginLeft:"16px"}}>
                                 <Button onClick={handleSetDeployModalVisible}>部署</Button>
+                                <Button onClick={handleRestartServerNodes}>重启</Button>
                                 <Button onClick={handleSetResourceModalVisible}>资源配置</Button>
                                 <Button onClick={() => setScaleModalVisible(true)}>扩容</Button>
                                 <Button onClick={() => handleStopServerNodes()}>停止</Button>
-                                <Button onClick={handleRefresh}>删除</Button>
+                                <Button onClick={handleRefresh} danger>删除</Button>
                             </ButtonGroup>
                         </div>
-
                     }>
                         <Table 
                             rowSelection={Object.assign({ type: "checkbox" }, rowSelection)}
                             bordered
-                            columns={[
-                                { title: '主机地址', dataIndex: 'host', key: 'host' },
-                                { title: '端口号', key: 'port', dataIndex:"port" },
-                                { title: '创建时间', dataIndex: 'node_create_time', key: 'node_create_time' },
-                                { title: '状态', key: 'server_node_status', dataIndex:"server_node_status",render:(text,record)=>{
-                                    if(record.server_node_status === 1){
-                                        return <span style={{color:'green'}}>online</span>
-                                    }
-                                    if(record.server_node_status === 2){
-                                        return <span style={{color:'red'}}>offline</span>
-                                    }
-                                    return <span style={{color:'black'}}>已删除</span>
-                                }},
-                                { title: '版本号', key: 'patch_id', dataIndex:"patch_id" },
-                            ]}
+                            columns={ServerNodesColumns}
                             dataSource={serverNodes}
                             rowKey="id"
-                            pagination={false}
                         />
                     </Card>
                     <Divider />

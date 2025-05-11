@@ -131,7 +131,12 @@ func (cm *CgroupManager) SetCPULimit(cores float64) error {
 	})
 }
 
+// 单位 M
 func (cm *CgroupManager) SetMemoryLimit(memoryLimit int64) error {
+	if memoryLimit <= 0 {
+		return fmt.Errorf("memory limit must be positive")
+	}
+	memoryLimit = memoryLimit * 1024 * 1024 // 转换为M
 	if cm.isV2 {
 		return cm.cgroup2.Update(&cgroupsv2.Resources{
 			Memory: &cgroupsv2.Memory{

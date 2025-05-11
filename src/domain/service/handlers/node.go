@@ -53,7 +53,6 @@ func CreateNode(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "创建节点成功", "data": id})
 }
 
-
 func GetServerNodesStatus(ctx *gin.Context) {
 	var req struct {
 		NodeId       int    `json:"node_id,omitempty"`
@@ -120,7 +119,7 @@ func CheckServerNodesStatus(ctx *gin.Context) {
 				ServerId:     req.ServerId,
 				ServerNodeId: v.Id,
 				TYPE:         entity.TYPE_CHECK,
-				Content: 		fmt.Sprintf("nodeId %d is not alive", v),
+				Content: 		fmt.Sprintf("nodeId %d is not alive ,error %s", v,err.Error()),
 				ServerName:   serverInfo.ServerName,
 			})
 			mapper.T_Mapper.UpdateNodeStatus(v.Id, constant.COMM_STATUS_OFFLINE)

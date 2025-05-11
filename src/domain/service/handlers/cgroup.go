@@ -7,6 +7,7 @@ import (
 	"sgridnext.com/src/domain/cgroupmanager"
 	"sgridnext.com/src/domain/config"
 	"sgridnext.com/src/domain/patchutils"
+	"sgridnext.com/src/domain/service/entity"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
 )
@@ -57,6 +58,12 @@ func SetCpuLimit(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "设置CPU限制失败"})
 			return
 		}
+		// 保存到数据库
+		mapper.T_Mapper.UpsertServerNodeLimit(&entity.ServerNodeLimit{
+			ServerId:     req.ServerId,
+			ServerNodeId: node.Id,
+			CpuLimit:     req.CpuLimit,
+		}) 
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "设置CPU限制成功"})
 }
@@ -199,6 +206,12 @@ func SetMemoryLimit(ctx *gin.Context) {
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "Cgroup删除失败"})
 			return
 		}
+		// 保存到数据库
+		mapper.T_Mapper.UpsertServerNodeLimit(&entity.ServerNodeLimit{
+			ServerId:     req.ServerId,
+			ServerNodeId: node.Id,
+			MemoryLimit:  req.MemoryLimit,
+		})
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "设置内存限制成功"})
 }

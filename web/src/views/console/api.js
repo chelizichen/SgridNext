@@ -100,6 +100,10 @@ export function getStatus(data) {
   return request({ url: "/server/cgroup/getStatus", data });
 }
 
+export function setMemoryLimit(data) {
+  return request({ url: "/server/cgroup/setMemLimit", data });
+}
+
 // {
 //   "data": {
 //       "cpu": {

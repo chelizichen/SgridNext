@@ -67,3 +67,12 @@ type NodeStat struct {
 	Content      string `gorm:"column:content;type:text"`
 	CreateTime   string `gorm:"column:create_time;type:varchar(64)"`
 }
+
+type ServerNodeLimit struct {
+	ServerNodeId int `gorm:"column:server_node_id;primaryKey"`
+	ServerId     int `gorm:"column:server_id"`
+	CpuLimit     float64 `gorm:"column:cpu_limit"` // 单位：核
+	MemoryLimit  int64 `gorm:"column:memory_limit"` // 单位：M
+	CreateTime   string `gorm:"column:create_time;type:varchar(64)"`
+	UpdateTime   string `gorm:"column:update_time;type:varchar(64)"`
+}

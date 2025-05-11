@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, InputNumber, List, message } from 'antd';
-import { setCpuLimit } from './api';
+import { setCpuLimit, setMemoryLimit } from './api';
 export default function ResourceModal({ visible, onOk, onCancel, form, nodes,serverId }) {
     const [messageApi, contextHolder] = message.useMessage();
     return (
@@ -17,10 +17,16 @@ export default function ResourceModal({ visible, onOk, onCancel, form, nodes,ser
                                 nodeIds: nodes.map(node => node.id),
                                 serverId,
                             });
+                            setMemoryLimit({
+                                memoryLimit: values.memory,
+                                nodeIds: nodes.map(node => node.id),
+                                serverId,
+                            });
                             onOk(values);
                         })
                         .catch(info => {
                             // 可以在这里处理验证失败的逻辑
+                            messageApi.error(info.errorFields[0].errors[0]);
                         });
                 }}
                 onCancel={onCancel}

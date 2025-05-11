@@ -56,3 +56,12 @@ Restart = no
 
 1. 节点内网地址 通过 ip show addr etho0 查看
 2. 节点外网地址 通过 curl ifconfig.me 查看
+
+### TIPS
+
+1. 纯Express服务，启动需要 20M的内存
+2. 纯Gin服务，启动需要8M的内存
+
+可以通过
+
+cat /sys/fs/cgroup/system.slice/xx/memory.current 查看使用内存大小

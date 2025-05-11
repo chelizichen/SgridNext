@@ -24,6 +24,7 @@ func LoadMapper(db *gorm.DB) {
 	T_Mapper.db.AutoMigrate(&entity.ServerPackage{})
 	T_Mapper.db.AutoMigrate(&entity.ServerNode{})
 	T_Mapper.db.AutoMigrate(&entity.NodeStat{})
+	T_Mapper.db.AutoMigrate(&entity.ServerNodeLimit{})
 }
 
 type T_PatchServer_Mapper struct {
@@ -145,6 +146,8 @@ type ServerNodesVo struct {
 	PatchId          int    `json:"patch_id"`
 	NodeCreateTime   string `json:"node_create_time"`
 	ServerNodeStatus int    `json:"server_node_status"`
+	CpuLimit         float64 `json:"cpu_limit"`
+	MemoryLimit      int 	`json:"memory_limit"`
 }
 
 func (t *T_PatchServer_Mapper) GetServerNodes(serverId int,nodeId int) ([]ServerNodesVo, error) {
@@ -169,10 +172,14 @@ func (t *T_PatchServer_Mapper) GetServerNodes(serverId int,nodeId int) ([]Server
 		server_nodes.patch_id as patch_id,
 		server_nodes.create_time as node_create_time,
 		server_nodes.server_node_status as server_node_status,
-		nodes.host as host
+		nodes.host as host,
+		server_node_limits.cpu_limit as cpu_limit,
+		server_node_limits.memory_limit as memory_limit
 	FROM server_nodes
 	LEFT JOIN 
 		nodes ON server_nodes.node_id = nodes.id
+	LEFT JOIN
+		server_node_limits ON server_nodes.id = server_node_limits.server_node_id
 	`
 	query += where
 	res := t.db.Raw(query, params...).Scan(&servers)
@@ -247,4 +254,26 @@ func (t *T_PatchServer_Mapper) GetNodeStatList(req *entity.NodeStat,offset int,s
 		Order("id desc").
 		Find(&rsp.List)
 	return rsp, res.Error
+}
+
+// cgroup limit
+func (t *T_PatchServer_Mapper) GetServerNodeLimitList(serverNodeIds []int ) ([]entity.ServerNodeLimit, error) {
+	var limits []entity.ServerNodeLimit
+	res := t.db.Debug().
+	Model(&entity.ServerNodeLimit{}).
+	Where("server_node_id in ?",serverNodeIds).
+	Find(&limits)
+	return limits, res.Error
+}
+
+func (t *T_PatchServer_Mapper) UpsertServerNodeLimit(req *entity.ServerNodeLimit) error {
+	res := t.db.Debug().
+		Where("server_node_id = ?",req.ServerNodeId).
+		Assign(entity.ServerNodeLimit{
+			CpuLimit: req.CpuLimit,
+			MemoryLimit: req.MemoryLimit,
+			UpdateTime: constant.GetCurrentTime(),
+		}).
+		FirstOrCreate(req)
+	return res.Error
 }
