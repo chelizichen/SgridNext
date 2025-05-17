@@ -1,0 +1,3 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  org.chelizichen.sgridjava.demo.sgrid.conf.LoadConf
+
