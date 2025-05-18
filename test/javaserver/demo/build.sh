@@ -1,0 +1,1 @@
+tar -czf SgridTestJavaServer.tar.gz ./target

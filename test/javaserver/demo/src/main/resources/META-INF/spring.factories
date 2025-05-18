@@ -1,3 +1,5 @@
 org.springframework.boot.env.EnvironmentPostProcessor=\
   org.chelizichen.sgridjava.demo.sgrid.conf.LoadConf
 
+org.springframework.context.ApplicationListener=\
+org.chelizichen.sgridjava.demo.sgrid.conf.ConfigSourceListener

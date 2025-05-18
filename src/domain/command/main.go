@@ -74,7 +74,18 @@ func (c *Command) Start() error {
 	if c.cmd == nil {
 		return fmt.Errorf("command not initialized")
 	}
-	err := c.cmd.Start()
+	redirectFilePath := filepath.Join(constant.TARGET_LOG_DIR,c.serverName,"waterfull.log")
+	outFile, err := os.Create(redirectFilePath)
+	if err != nil {
+		logger.CMD.Errorf("failed to create output file: %v", err)
+		return err
+	}
+	defer outFile.Close()
+	c.cmd.Stdout = outFile
+	c.cmd.Stderr = outFile
+
+	err = c.cmd.Start()
+	// 将命令输出重定向到文件
 	if err!= nil {
 		logger.CMD.Errorf("failed to start command: %v", err)
 		return err

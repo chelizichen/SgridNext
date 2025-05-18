@@ -61,6 +61,7 @@ Restart = no
 
 1. 纯Express服务，启动需要 20M的内存
 2. 纯Gin服务，启动需要8M的内存
+3. SpringBoot 服务，启动需要200M的内存
 
 可以通过
 

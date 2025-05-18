@@ -13,35 +13,35 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class LoadConf implements EnvironmentPostProcessor {
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        if (Constant.IsProduction()) {
-            // todo 从远端拉配置
-            return;
-        } else {
-            System.out.println("Sgrid [Java] Start In Local");
-            String folder = "src/main/resources/conf";
-            File fileFolder = new File(folder);
-            File[] array = fileFolder.listFiles();
-            if (array != null) {
-                for (File file : array) {
-                    if (file.isFile()) {
-                        System.out.println(file.getName());
-                        loadConfig(file.getName(), environment);
-                    }
+        // 初始化
+        System.out.println("Sgrid [Java] LoadConf INIT ONCE");
+        String folder = Constant.getLocalResourcesDir();
+        File fileFolder = new File(folder);
+        System.out.println("fileFolder: " + fileFolder.getAbsolutePath());
+        File[] array = fileFolder.listFiles();
+        if (array != null) {
+            for (File file : array) {
+                if (file.isFile()) {
+                    System.out.println(file.getName());
+                    loadConfig(file.getName(), environment);
                 }
             }
         }
     }
 
 
-    private void loadConfig(String fileName, ConfigurableEnvironment environment){
+    private void loadConfig(String fileName, ConfigurableEnvironment environment) {
         try {
-            String filePath = "src/main/resources/conf/" + fileName;
+            Path path = Paths.get(Constant.getLocalResourcesDir(), fileName);
+            String filePath = path.toString();
             FileUrlResource fileUrlResource = new FileUrlResource(filePath);
             PropertySourceLoader loader = new PropertiesPropertySourceLoader();
             if (fileName.endsWith(".yaml") || fileName.endsWith(".yml")) {
