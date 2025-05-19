@@ -9,7 +9,7 @@ import ServerModal from './ServerModal';
 import ScaleModal from './ScaleModal';
 import DeployModal from './DeployModal';
 import { Descriptions } from 'antd';
-import _ from 'lodash'
+import _ from 'lodash-es'
 import AddNodeModal from './AddNodeForm';
 import UploadConfigModal from './UploadConfigModal';
 

@@ -3,7 +3,7 @@ import { Modal, Table, Form, InputNumber, Button, Card, message } from 'antd';
 import { createServerNode } from './api';
 import { getServerType } from './constant';
 import { Descriptions } from 'antd';
-import _ from 'lodash';
+import _ from 'lodash-es';
 export default function ScaleModal({ visible, onOk, onCancel, nodes,serverInfo }) {
     const [messageApi, contextHolder] = message.useMessage();
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);

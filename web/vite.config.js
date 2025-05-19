@@ -3,32 +3,40 @@ import react from '@vitejs/plugin-react'
 import vitePluginImp from 'vite-plugin-imp'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    react(),
-    vitePluginImp({
-      libList: [
-        {
-          libName: 'antd',
-          style: (name) => `antd/es/${name}/style`,
+export default defineConfig(()=>{
+  return {
+    base: '/sgridnext/',
+    plugins: [
+      react(),
+      vitePluginImp({
+        libList: [
+          {
+            libName: 'antd',
+            style: (name) => `antd/es/${name}/style`,
+          },
+        ],
+      }),
+    ],
+    build: {
+      rollupOptions: {
+        external: ['lodash', /^lodash\//]
+      }
+    },
+    css: {
+      preprocessorOptions: {
+        less: {
+          javascriptEnabled: true,
         },
-      ],
-    }),
-  ],
-  css: {
-    preprocessorOptions: {
-      less: {
-        javascriptEnabled: true,
       },
     },
-  },
-  server: {
-    proxy: {
-      '/api/': {
-        target: 'http://124.220.19.199:15872',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+    server: {
+      proxy: {
+        '/api/': {
+          target: 'http://124.220.19.199:15872/api/',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+        },
       },
     },
-  },
+  }
 })
