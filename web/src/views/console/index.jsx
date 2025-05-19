@@ -351,6 +351,7 @@ export default function Console(){
                                 <Descriptions.Item label="服务类型">{getServerType(serverInfo.server_type)}</Descriptions.Item>
                                 <Descriptions.Item label="服务描述">{serverInfo.desc}</Descriptions.Item>
                                 <Descriptions.Item label="创建时间">{serverInfo.create_time}</Descriptions.Item>
+                                <Descriptions.Item label="执行地址">{serverInfo.exec_path}</Descriptions.Item>
                             </Descriptions>
                         ) : (
                             <p>请从左侧选择节点</p>

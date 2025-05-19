@@ -1,5 +1,14 @@
 package command
 
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"sgridnext.com/src/logger"
+)
+
 func CreateNodeCommand(serverName string, targetFile string) (*Command ,error){
 	cmd := NewServerCommand(serverName)
 	err := cmd.SetCommand("node", targetFile)
@@ -12,8 +21,46 @@ func CreateBinaryCommand(serverName string, targetFile string) (*Command ,error)
 	return cmd,err
 }
 
-func CreateJavaJarCommand(serverName string, targetFile string) (*Command ,error){
+func CreateJavaJarCommand(serverName string, targetDir string) (*Command ,error){
+	// 通过targetDir 去扫路径下的 jar文件
 	cmd := NewServerCommand(serverName)
-	err := cmd.SetCommand("java", "-jar", targetFile)
-	return cmd,err
+	// 在 目录下寻找 以 .jar 结尾的文件
+	jarFile, err := FindFile(targetDir, ".jar")
+	if err != nil {
+		return nil, err
+	}
+	if jarFile != "" {
+		logger.CMD.Infof("找到jar文件: %s", jarFile)
+		err = cmd.SetCommand("java", "-jar", jarFile)
+		return cmd,err
+	}
+	warFile, err := FindFile(targetDir, ".war")
+	if err!= nil {
+		return nil, err
+	}
+	if warFile != "" {
+		logger.CMD.Infof("找到war文件: %s", warFile)
+		err = cmd.SetCommand("java", "-war", warFile)
+		return cmd,err
+	}
+	return nil, fmt.Errorf("未找到.jar或.war后缀文件")
+}
+
+func FindFile(targetDir string, suffix string) (string, error) {
+	var foundFile string
+	err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(path, suffix) {
+			foundFile = path
+			return filepath.SkipDir
+		}
+		return nil
+	})
+
+	if foundFile == "" {
+		return "", fmt.Errorf("未找到%s后缀文件", suffix)
+	}
+	return foundFile, err
 }

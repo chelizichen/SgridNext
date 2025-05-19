@@ -1,4 +1,4 @@
-package org.chelizichen.sgridjava.demo.sgrid;
+package org.chelizichen.sgridjava.demo.sgrid.init;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;

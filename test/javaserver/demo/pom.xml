@@ -71,12 +71,33 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>post-package-script</id>
+                        <phase>package</phase> <!-- 在 package 之后执行 -->
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <!-- 执行 Shell 脚本（Linux/Mac） -->
+                            <executable>sh</executable>
+                            <arguments>
+                                <argument>${project.basedir}/build.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <repositories>
         <repository>
-                <id>aliyun</id>
-                <url>https://maven.aliyun.com/repository/public</url>
+            <id>aliyun</id>
+            <url>https://maven.aliyun.com/repository/public</url>
         </repository>
     </repositories>
     <pluginRepositories>
@@ -89,5 +110,4 @@
             </releases>
         </pluginRepository>
     </pluginRepositories>
-
 </project>

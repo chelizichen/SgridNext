@@ -1,5 +1,6 @@
-package org.chelizichen.sgridjava.demo.sgrid;
+package org.chelizichen.sgridjava.demo.sgrid.init;
 
+import org.chelizichen.sgridjava.demo.sgrid.Constant;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 
