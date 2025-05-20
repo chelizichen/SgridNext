@@ -11,9 +11,6 @@ import java.util.List;
 public class ConfigHelper {
     private static final ConfigHelper Instance = new ConfigHelper();
 
-    private ConfigHelper() {
-    }
-
     public static ConfigHelper getInstance() {
         return Instance;
     }

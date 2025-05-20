@@ -47,6 +47,7 @@ public class LoadConf implements EnvironmentPostProcessor {
             if (fileName.endsWith(".yaml") || fileName.endsWith(".yml")) {
                 loader = new YamlPropertySourceLoader();
             }
+            System.out.println("Sgrid [Java] LoadConf FilePath : " + filePath);
             List<PropertySource<?>> loaded = loader.load(fileName, fileUrlResource);
             if (!CollectionUtils.isEmpty(loaded)) {
                 environment.getPropertySources().addFirst(loaded.get(0));
