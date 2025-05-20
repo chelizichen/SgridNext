@@ -64,6 +64,7 @@ export default function UploadConfigModal({ visible, onOk, onCancel,serverId,fil
                     loading={loading}
                     style={{ marginTop: 16 }}
                     block
+                    disabled={fileName.includes("_") }
                 >
                     上传
                 </Button>

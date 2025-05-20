@@ -12,7 +12,22 @@ import { Descriptions } from 'antd';
 import _ from 'lodash-es'
 import AddNodeModal from './AddNodeForm';
 import UploadConfigModal from './UploadConfigModal';
+import HistoryModal from './HistoryModal';
 
+
+function conversionConf(files) {
+    const result = {};
+    const baseFiles = files.filter(file => !file.includes('_'));
+    baseFiles.forEach(baseFile => {
+      const baseName = baseFile.split('.')[0]; // 如 "application" 或 "server"
+      const timestampFiles = files.filter(file => 
+        file.startsWith(`${baseName}_`)
+      );
+      result[baseFile] = timestampFiles;
+    });
+    return result;
+}
+  
 
 const ServerNodesColumns = [
     { title: '主机地址', dataIndex: 'host', key: 'host' },
@@ -99,7 +114,7 @@ export default function Console(){
         "exec_path":""
     })
     let [serverNodes,setServerNodes] = useState([]);
-    let [serverConfigList,setServerConfigList] = useState([]);
+    let [serverConfigList,setServerConfigList] = useState({});
     const [serverNodePage,setServerNodePage] = useState({
         offset:1,
         size:10
@@ -145,7 +160,7 @@ export default function Console(){
         });
 
         getServerConfigList({serverId:serverId}).then(res=>{
-            setServerConfigList(res.data || []);
+            setServerConfigList(conversionConf(res.data || []));
             console.log('getServerConfigList >> ',res);
         })
 
@@ -284,6 +299,12 @@ export default function Console(){
         }
         setDeployModalVisible(true);
     }
+    const [historyModelVisible, setHistoryModelVisible] = useState(false);
+    const [historyData,setHistoryData] = useState([]);
+    const handleCheckhistory = (fileName) => {
+        setHistoryData(serverConfigList[fileName]);
+        setHistoryModelVisible(true);
+    }
     return (
         <div style={{ padding: 24 }}>
             {contextHolder}
@@ -310,7 +331,7 @@ export default function Console(){
                         </ButtonGroup>
                     }>
                         <List
-                            dataSource={serverConfigList}
+                            dataSource={Object.keys(serverConfigList)}
                             renderItem={item => (
                                 <List.Item>
                                     <div>
@@ -318,7 +339,8 @@ export default function Console(){
                                     </div>
                                     <ButtonGroup size={"small"} style={{float:'right'}}>
                                         <Button onClick={()=>handleUpsertConfig(1,item)} >查看</Button>
-                                        <Button danger>删除</Button>
+                                        <Button onClick={()=>handleCheckhistory(item)} >查看历史记录</Button>
+                                        {/* <Button danger>删除</Button> */}
                                     </ButtonGroup>
                                 </List.Item>
                             )}
@@ -496,6 +518,13 @@ export default function Console(){
                 fileName={fileName}
             >
             </UploadConfigModal>
+            <HistoryModal 
+                visible={historyModelVisible} 
+                onCancel={()=>setHistoryModelVisible(false)}
+                historyData={historyData}
+                checkFileCb={(fileName)=>{handleUpsertConfig(1,fileName)}}
+            >
+            </HistoryModal>
         </div>
     );
 }
