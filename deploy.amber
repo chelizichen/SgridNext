@@ -1,0 +1,128 @@
+import {exit} from "std/env";
+
+let SGRID_NODE = "sgridnode"
+let SGRID_NEXT = "sgridnext"
+let PKG = "SgridCloud"
+fun clean(){
+    $rm -r dist$ failed{
+        echo "remove web dist failed, ignore"
+        // exit(1)
+    }
+    $rm -r archive$ failed{
+        echo "remove archive failed, ignore"
+        // exit(1)
+    }
+}
+
+fun build_sgridnext_web(){
+
+    $ cd web $failed{
+        echo "cd web failed"
+        exit(1)
+    }
+    $ npm run build $failed{
+        echo "npm run build failed"
+        exit(1)
+    }
+    $ cd .. $failed{
+        echo "cd .. failed"
+        exit(1)
+    }
+    $ cp -r web/dist dist $failed{
+        echo "cp -r web/dist dist failed"
+        exit(1)
+    }
+
+}
+
+fun build_sgridnext_backend(){
+    $GOOS=linux GOARCH=amd64 go build -o "{SGRID_NEXT}" $failed{
+        echo "build sgridnext backend failed"
+        exit(1)
+    }
+}
+
+fun build_sgrid_node(){
+    $ cd server/SgridNodeServer $failed{
+        echo "cd server/SgridNodeServer failed"
+        exit(1)
+    }
+    $ GOOS=linux GOARCH=amd64 go build -o "{SGRID_NODE}" $failed{
+        echo "build sgrid node backend failed"
+        exit(1)
+    }
+
+    $ mv ./"{SGRID_NODE}" ../../ $failed{
+        echo "mv sgrid node backend failed"
+        exit(1)
+    }
+    $ cd ../../ $failed{
+        echo "cd../../ failed"
+        exit(1)
+    }
+}
+
+fun make_archive(){
+    $ mkdir archive $ failed{
+        echo "mkdir archive failed"
+        exit(1)
+    }
+    $ mkdir archive/"{SGRID_NEXT}"  $ failed{
+        echo "mkdir archive/"{SGRID_NEXT}" failed"
+        exit(1)
+    }
+    $ mkdir archive/"{SGRID_NODE}"  $ failed{
+        echo "mkdir archive/"{SGRID_NODE}" failed"
+        exit(1)
+    }
+
+    $ mv ./"{SGRID_NODE}" ./archive/"{SGRID_NODE}" $ failed{
+        echo "mv sgrid node backend failed"
+        exit(1)
+    }
+    $ cp ./server/SgridNodeServer/config.json ./archive/"{SGRID_NODE}" $ failed{
+        echo "cp sgrid next backend failed"
+        exit(1)
+    }
+
+    $ mv ./"{SGRID_NEXT}" ./archive/"{SGRID_NEXT}" $ failed{
+        echo "mv sgrid next backend failed"
+        exit(1)
+    }
+    $ cp ./config.json ./archive/"{SGRID_NEXT}" $ failed{
+        echo "cp sgrid next backend failed"
+        exit(1)
+    }
+
+    $ mv ./dist ./archive/"{SGRID_NEXT}" $ failed{
+        echo "mv web dist failed"
+        exit(1)
+    }
+
+    $ cp sgridnext.service ./archive $failed{
+        echo "cp sgridnext.service failed"
+        exit(1)
+    }
+
+    $ cp sgridnode.service ./archive $failed{
+        echo "cp sgridnode.service failed"
+        exit(1)
+    }
+}
+
+fun tar_archive(){
+    $ tar -zcvf "{PKG}".tar.gz archive $failed{
+        echo "tar -zcvf "{PKG}".tar.gz archive failed"
+        exit(1)
+    }
+    
+}
+
+main(args){
+    clean()
+    build_sgridnext_web()
+    build_sgridnext_backend()
+    build_sgrid_node()
+    make_archive()
+    tar_archive()
+}
