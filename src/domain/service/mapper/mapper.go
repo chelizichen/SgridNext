@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"gorm.io/gorm"
+	"sgridnext.com/src/config"
 	"sgridnext.com/src/constant"
-	"sgridnext.com/src/domain/config"
 	"sgridnext.com/src/domain/service/entity"
 	"sgridnext.com/src/logger"
 )
@@ -55,7 +55,7 @@ func (t *T_PatchServer_Mapper) GetNodeInfo(id int) (entity.Node, error) {
 	return node, res.Error
 }
 
-func (t *T_PatchServer_Mapper) UpdateNodePatch(ids []int,patchId int) error {
+func (t *T_PatchServer_Mapper) UpdateNodePatch(ids []int, patchId int) error {
 	logger.Mapper.Info("更新服务节点：", ids, patchId)
 	if len(ids) == 0 {
 		return nil
@@ -68,7 +68,7 @@ func (t *T_PatchServer_Mapper) UpdateNodePatch(ids []int,patchId int) error {
 	return err
 }
 
-func (t *T_PatchServer_Mapper) UpdateNodeStatus(id int,status int) error {
+func (t *T_PatchServer_Mapper) UpdateNodeStatus(id int, status int) error {
 	err := t.db.Debug().
 		Model(&entity.ServerNode{}).
 		Where("id = ?", id).
@@ -140,17 +140,17 @@ func (t *T_PatchServer_Mapper) GetServerInfo(id int) (entity.Server, error) {
 }
 
 type ServerNodesVo struct {
-	Id               int    `json:"id"`
-	Host             string `json:"host"`
-	Port             int    `json:"port"`
-	PatchId          int    `json:"patch_id"`
-	NodeCreateTime   string `json:"node_create_time"`
-	ServerNodeStatus int    `json:"server_node_status"`
+	Id               int     `json:"id"`
+	Host             string  `json:"host"`
+	Port             int     `json:"port"`
+	PatchId          int     `json:"patch_id"`
+	NodeCreateTime   string  `json:"node_create_time"`
+	ServerNodeStatus int     `json:"server_node_status"`
 	CpuLimit         float64 `json:"cpu_limit"`
-	MemoryLimit      int 	`json:"memory_limit"`
+	MemoryLimit      int     `json:"memory_limit"`
 }
 
-func (t *T_PatchServer_Mapper) GetServerNodes(serverId int,nodeId int) ([]ServerNodesVo, error) {
+func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]ServerNodesVo, error) {
 	var servers []ServerNodesVo
 	var params []interface{}
 	where := " where 1 = 1"
@@ -192,7 +192,6 @@ func (t *T_PatchServer_Mapper) GetNodeList() ([]entity.Node, error) {
 	return nodes, res.Error
 }
 
-
 func (t *T_PatchServer_Mapper) GetServerPackageList(id int) ([]entity.ServerPackage, error) {
 	var packages []entity.ServerPackage
 	// 根据id 倒叙
@@ -219,11 +218,11 @@ func (t *T_PatchServer_Mapper) SaveNodeStat(req *entity.NodeStat) (int, error) {
 }
 
 type PageGetNodeStatListRsp struct {
-	Total int64 `json:"total"`
+	Total int64             `json:"total"`
 	List  []entity.NodeStat `json:"list"`
 }
 
-func (t *T_PatchServer_Mapper) GetNodeStatList(req *entity.NodeStat,offset int,size int) (PageGetNodeStatListRsp, error) {
+func (t *T_PatchServer_Mapper) GetNodeStatList(req *entity.NodeStat, offset int, size int) (PageGetNodeStatListRsp, error) {
 	var rsp PageGetNodeStatListRsp = PageGetNodeStatListRsp{
 		Total: 0,
 		List:  []entity.NodeStat{},
@@ -247,7 +246,7 @@ func (t *T_PatchServer_Mapper) GetNodeStatList(req *entity.NodeStat,offset int,s
 	}
 	res := t.db.Debug().
 		Model(&entity.NodeStat{}).
-		Where(where,queryParams...).
+		Where(where, queryParams...).
 		Count(&rsp.Total).
 		Limit(size).
 		Offset(offset).
@@ -257,23 +256,33 @@ func (t *T_PatchServer_Mapper) GetNodeStatList(req *entity.NodeStat,offset int,s
 }
 
 // cgroup limit
-func (t *T_PatchServer_Mapper) GetServerNodeLimitList(serverNodeIds []int ) ([]entity.ServerNodeLimit, error) {
+func (t *T_PatchServer_Mapper) GetServerNodeLimitList(serverNodeIds []int) ([]entity.ServerNodeLimit, error) {
 	var limits []entity.ServerNodeLimit
 	res := t.db.Debug().
-	Model(&entity.ServerNodeLimit{}).
-	Where("server_node_id in ?",serverNodeIds).
-	Find(&limits)
+		Model(&entity.ServerNodeLimit{}).
+		Where("server_node_id in ?", serverNodeIds).
+		Find(&limits)
 	return limits, res.Error
 }
 
 func (t *T_PatchServer_Mapper) UpsertServerNodeLimit(req *entity.ServerNodeLimit) error {
 	res := t.db.Debug().
-		Where("server_node_id = ?",req.ServerNodeId).
+		Where("server_node_id = ?", req.ServerNodeId).
 		Assign(entity.ServerNodeLimit{
-			CpuLimit: req.CpuLimit,
+			CpuLimit:    req.CpuLimit,
 			MemoryLimit: req.MemoryLimit,
-			UpdateTime: constant.GetCurrentTime(),
+			UpdateTime:  constant.GetCurrentTime(),
 		}).
 		FirstOrCreate(req)
 	return res.Error
+}
+
+
+func (t *T_PatchServer_Mapper) GetHost(nodeId int) (string, error) {
+	var Node entity.Node
+	res := t.db.Debug().
+		Model(&entity.Node{}).
+		Where("id =?", nodeId).
+		First(&Node)
+	return Node.Host, res.Error
 }

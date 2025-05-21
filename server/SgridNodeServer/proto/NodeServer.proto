@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package SgridProtocol;
+
+import "google/protobuf/empty.proto";
+
+option go_package = ".;protocol";
+
+message activateReq{
+    int32 serverId = 1;
+    int32 packageId = 2;
+    repeated int32 serverNodeIds = 3;
+    int32 type = 4; // 1 部署激活 2 重启激活 3关闭
+}
+
+message basicRes{
+    int32 code = 1;
+    string msg = 2; 
+}
+
+message SyncReq{
+    int32 type = 1; // 1 同步配置文件 2 同步服务包
+    int32 serverId = 2; // 节点id
+    string fileName = 3;
+}
+
+message CgroupLimitReq{
+    int32 serverId = 1; // 节点id
+    repeated int32 nodeIds = 2; // cgroup id
+    int32 type = 3; // 1 CPU 2 内存
+    float value = 4; // 限制值
+}
+
+message CheckStatReq{
+    int32 serverId = 1; // 节点id
+    repeated int32 nodeIds = 2; // cgroup id
+}
+
+
+// 文件传输服务定义
+service NodeServant {
+    // 节点心跳
+    rpc KeepAlive(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    // 唤起
+    rpc ActivateServant(activateReq) returns (basicRes) {}
+    // 关闭
+    rpc DeactivateServant(activateReq) returns (basicRes) {}
+    // 告知同步配置文件(异步调用，结束后同步主节点)
+    rpc SyncConfigFile(SyncReq) returns (basicRes) {}
+    // 告知同步服务包(异步调用，结束后同步主节点)
+    rpc SyncServicePackage(SyncReq) returns (basicRes) {}
+    // Cgroup限制
+    rpc CgroupLimit(CgroupLimitReq) returns (basicRes) {}
+    // 检查状态
+    rpc CheckStat(CheckStatReq) returns (basicRes) {}
+}

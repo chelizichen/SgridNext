@@ -1,7 +1,5 @@
 package constant
 
-import "time"
-
 const (
 	SGRID_LOG_DIR     = "SGRID_LOG_DIR"
 	SGRID_CONF_DIR    = "SGRID_CONF_DIR"
@@ -38,7 +36,23 @@ const (
 )
 
 
-// 拿到当前时间 YYYY-MM-DD HH:MM:SS
-func GetCurrentTime() string {
-    return time.Now().Format("2006-01-02 15:04:05")
-}
+const (
+	ACITVATE_DEPLOY = 1
+	ACTIVATE_RESTART = 2
+	ACTIVATE_STOP = 3
+)
+
+const (
+	FILE_TYPE_CONFIG = 1
+	FILE_TYPE_PACKAGE =2
+)
+
+const (
+	CGROUP_TYPE_CPU = 1
+	CGROUP_TYPE_MEMORY = 2
+	CGROUP_TYPE_DELETE = -1
+)
+
+const (
+	NODE_PORT = "25528"
+)

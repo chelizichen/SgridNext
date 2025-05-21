@@ -14,31 +14,11 @@
 
 ### 前端
 
-在 web 目录下打包即可
+### SgridWeb 部署
 
-执行 npm run build
+#### Systemctl 启动
 
-### Systemctl 启动
-
-创建指定systemctl 启动文件 /usr/lib/systemd/system/sgridnext.service
-ExecStart 为启动文件
-WorkingDirectory 为工作目录
-Environment 为环境变量
-
--- 具体配置参考官方文档
-
-配置完之后 执行
-
-````shell
-# 启动
-systemctl start sgridnext
-# 重启
-systemctl restart sgridnext
-# 停止
-systemctl stop sgridnext
-# 查看状态
-systemctl status sgridnext
-````
+创建指定systemctl 启动文件 **/usr/lib/systemd/system/sgridnext.service**
 
 ````s
 [Unit]
@@ -52,9 +32,51 @@ Environment=PATH=/usr/bin:/usr/local/bin
 Restart = no
 ````
 
+ExecStart 为启动文件
+WorkingDirectory 为工作目录
+Environment 为环境变量
+
+-- 具体配置参考官方文档
+配置完之后 执行 **systemctl start sgridnext**
+
+````shell
+# 启动
+systemctl start sgridnext
+# 重启
+systemctl restart sgridnext
+# 停止
+systemctl stop sgridnext
+# 查看状态
+systemctl status sgridnext
+````
+
+### SgridNode 部署
+
+1. 进入到 server/SgridNodeServer 目录下
+2. 执行 ./build.sh 编译 Node 服务
+3. 编写配置文件
+   1. db 为主库地址
+   2. nodeIndex 为 节点的 **ID**
+   3. nodePort 为绑定的端口号 默认为 25528
+   4. mainNode 为主节点地址，需要 pin 的通，不然没法拉取配置和包
+4. 将 sgridnode 文件 拷贝至 **/usr/sgridnode/** 目录下
+5. 编写 systemctl 启动文件 **/usr/lib/systemd/system/sgridnode.service**
+
+````s
+[Unit]
+Description = sgrid next,A cloud platform for grid computing
+
+[Service]
+Type = simple
+ExecStart = /usr/sgridnode/sgridnode
+WorkingDirectory = /usr/sgridnode
+Environment=PATH=/usr/bin:/usr/local/bin
+Restart = no
+````
+
 ### 创建节点
 
-1. 节点内网地址 通过 ip show addr etho0 查看
+1. 节点内网地址 通过 ip addr show etho0 查看
 2. 节点外网地址 通过 curl ifconfig.me 查看
 
 ### TIPS
@@ -63,6 +85,6 @@ Restart = no
 2. 纯Gin服务，启动需要8M的内存
 3. SpringBoot 服务，启动需要200M的内存
 
-可以通过
+### 内存与CPU用量查看
 
 cat /sys/fs/cgroup/system.slice/xx/memory.current 查看使用内存大小

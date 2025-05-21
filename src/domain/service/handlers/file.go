@@ -1,0 +1,78 @@
+package handlers
+
+import (
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"sgridnext.com/src/constant"
+	"sgridnext.com/src/domain/service/mapper"
+	"sgridnext.com/src/logger"
+)
+
+func GetFile(ctx *gin.Context) {
+	var req struct {
+		ServerId int    `json:"serverId"`
+		FileName string `json:"fileName"`
+		Type     int    `json:"type"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	logger.App.Info("GetFile %v", req)
+	serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务信息失败"})
+		return
+	}
+	var file_path string
+	cwd, _ := os.Getwd()
+	if req.Type == constant.FILE_TYPE_PACKAGE {
+		file_path = filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, serverInfo.ServerName, req.FileName)
+	}
+	if req.Type == constant.FILE_TYPE_CONFIG {
+		file_path = filepath.Join(cwd, constant.TAGET_CONF_DIR, serverInfo.ServerName, req.FileName)
+	}
+	logger.App.Infof("获取文件 %s", file_path)
+	if _, err := os.Stat(file_path); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "文件不存在"})
+		return
+	}
+	ctx.File(file_path)
+}
+
+// 屏蔽 含有 _ 的历史文件
+func GetConfigList(ctx *gin.Context) {
+	var req struct {
+		ServerId int `json:"serverId"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	logger.App.Info("GetConfigList %v", req)
+	serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务信息失败"})
+		return
+	}
+	cwd, _ := os.Getwd()
+	config_dir := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverInfo.ServerName)
+	files, err := os.ReadDir(config_dir)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取配置文件列表失败"})
+		return
+	}
+	var file_list []string
+	for _, file := range files {
+		if strings.Contains(file.Name(), "_") {
+			continue
+		}
+		file_list = append(file_list, file.Name())
+	}
+	logger.App.Info("GetConfigList | file_list | %v", file_list)
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "获取配置文件列表成功", "data": file_list})
+}

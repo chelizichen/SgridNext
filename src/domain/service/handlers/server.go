@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -8,12 +9,13 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/src/constant"
-	"sgridnext.com/src/domain/command"
-	"sgridnext.com/src/domain/patchutils"
 	"sgridnext.com/src/domain/service/entity"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
+	"sgridnext.com/src/patchutils"
+	"sgridnext.com/src/proxy"
 )
 
 func CreateServer(ctx *gin.Context) {
@@ -82,8 +84,8 @@ func CreatePackage(ctx *gin.Context) {
 		Commit:     commit,
 		FileName:   newFileName,
 	}
-	rsp, err := mapper.T_Mapper.CreateServerPackage(serverPackage);
-	if  err != nil {
+	rsp, err := mapper.T_Mapper.CreateServerPackage(serverPackage)
+	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "创建服务包失败", "error": err.Error()})
 		return
 	}
@@ -93,6 +95,22 @@ func CreatePackage(ctx *gin.Context) {
 		TYPE:       entity.TYPE_PATCH,
 		Content:    fmt.Sprintf("已部署服务包 %s | 版本号 %d", serverName, rsp),
 	})
+
+	go func ()  {
+		// 全量调用
+		proxy.ProxyMap.FullDispatch(func(nsc *protocol.NodeServantClient) error {
+			_,err := (*nsc).SyncServicePackage(context.Background(),&protocol.SyncReq{
+				FileName: newFileName,
+				Type: constant.FILE_TYPE_PACKAGE,
+				ServerId: int32(serverId),
+			})
+			if err  != nil{
+				logger.RPC.Infof("调用失败 | SyncConfigFile | err | %s",err.Error())
+			}
+			return err
+		})	
+	}()
+
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "创建服务包成功", "hash": hash})
 }
 
@@ -184,152 +202,10 @@ func CreateGroup(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "创建服务组成功"})
 }
 
-type RUN_SERVER_REQ struct{
+type RUN_SERVER_REQ struct {
 	ServerId  int   `json:"serverId"`
 	PackageId int   `json:"packageId"`
 	NodeIds   []int `json:"serverNodeIds"`
-}
-
-func RunServer(ctx *gin.Context,req RUN_SERVER_REQ, needDeploy bool) {
-	cwd, _ := os.Getwd()
-	logger.Server.Infof("DeployServer | req | %v", req)
-	serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
-	if err != nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器信息失败", "error": err.Error()})
-		return
-	}
-	logger.Server.Infof("DeployServer | serverInfo | %v", serverInfo)
-	execPath := serverInfo.ExecFilePath
-	serverName := serverInfo.ServerName
-	serverType := serverInfo.ServerType
-	// 不是重启，需要解压文件到目标目录，然后再启动execPath
-	if needDeploy {
-		packageInfo, err := mapper.T_Mapper.GetServerPackageInfo(req.PackageId)
-		if err != nil {
-			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器包信息失败", "error": err.Error()})
-			return
-		}
-		logger.Server.Infof("DeployServer | packageInfo | %v", packageInfo)
-		packageFileName := packageInfo.FileName
-		tarPath := filepath.Join(constant.TARGET_PACKAGE_DIR, serverName, packageFileName)
-		serverDir := filepath.Join(constant.TARGET_SERVANT_DIR, serverName)
-		logger.Server.Infof("DeployServer | tarPath | %s | serverDir | %s", tarPath, serverDir)
-		err = patchutils.T_PatchUtils.Tar2Dest(tarPath, serverDir)
-		if err != nil {
-			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "解压服务器包失败", "error": err.Error()})
-			return
-		}
-	}
-
-	nodes, err := mapper.T_Mapper.GetServerNodes(req.ServerId,0)
-	logger.Server.Infof("DeployServer | nodes | %v", nodes)
-	if err != nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器节点信息失败", "error": err.Error()})
-		return
-	}
-	nodeStatFactory := entity.NewNodeStatFactory(&entity.NodeStat{
-		ServerName: serverInfo.ServerName,
-		ServerId:   serverInfo.ID,
-	})
-	for _, node := range nodes {
-		if !patchutils.T_PatchUtils.Contains(req.NodeIds, node.Id) {
-			continue
-		}
-		mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-			TYPE:       entity.TYPE_INFO,
-			ServerNodeId: node.Id,
-			Content:    fmt.Sprintf("开始部署服务器 %s | 节点 %d | 版本号 | %d | 端口号 %d",serverInfo.ServerName, node.Id,req.PackageId,node.Port),
-		}))
-		logger.Server.Infof("DeployServer | node | %v", node)
-		currentCommand := command.CenterManager.GetCommand(node.Id)
-		if currentCommand != nil {
-			err := currentCommand.Stop()
-			if err!= nil {
-				ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "停止服务器失败", "error": err.Error()})
-				mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-					TYPE:       entity.TYPE_ERROR,
-					ServerNodeId: node.Id,
-					Content:    fmt.Sprintf(
-						"部署服务器失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", 
-					serverInfo.ServerName,
-						node.Id,
-						req.PackageId,
-						node.Port,
-						err.Error(),
-					),
-				}))
-				return
-			}
-		}
-		targetFile := filepath.Join(cwd,constant.TARGET_SERVANT_DIR, serverName,execPath)
-		patchServerInfo := &patchutils.ServerInfo{
-			ServerType: serverType,
-			ServerName: serverName,
-			TargetFile: targetFile,
-			BindPort:   node.Port,
-			BindHost:   node.Host,
-			NodeId:     node.Id,
-		}
-		logger.Server.Infof("DeployServer | patchServerInfo | %v", patchServerInfo)
-		cmd,err := patchServerInfo.CreateCommand()
-		if err != nil {
-			logger.Server.Infof("DeployServer | err | %v", err)
-			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "创建服务器命令失败", "error": err.Error()})
-			return
-		}
-		args := cmd.GetCmd().Args
-		cmd.AppendEnv([]string{
-			fmt.Sprintf("%s=%s", constant.SGRID_TARGET_HOST,node.Host),
-			fmt.Sprintf("%s=%v", constant.SGRID_TARGET_PORT,node.Port),
-		})
-		logger.Server.Infof("DeployServer | args | %v", args)
-		err = cmd.Start()
-		command.CenterManager.AddCommand(node.Id, cmd)
-		if err!= nil {
-			mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-				TYPE:       entity.TYPE_ERROR,
-				ServerNodeId: node.Id,
-				Content:    fmt.Sprintf(
-					"启动服务器失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", 
-				serverInfo.ServerName,
-					node.Id,
-					req.PackageId,
-					node.Port,
-					err.Error(),
-				),
-			}))
-			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "启动服务器失败", "error": err.Error()})
-			return
-		}
-		err = command.UseCgroup(cmd)
-		if err != nil {
-			mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-				TYPE:       entity.TYPE_ERROR,
-				ServerNodeId: node.Id,
-				Content:    fmt.Sprintf(
-					"设置cgroup失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", 
-				serverInfo.ServerName,
-					node.Id,
-					req.PackageId,
-					node.Port,
-					err.Error(),
-				),
-			}))
-			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "设置cgroup失败", "error": err.Error()})
-			return
-		}
-		logger.Server.Infof("DeployServer | cmd | %v", cmd)
-	}
-	mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-		TYPE:       entity.TYPE_SUCCESS,
-		Content:    fmt.Sprintf("部署服务器成功 %s | 节点 %s | 版本号 %d", serverInfo.ServerName, req.NodeIds, req.PackageId),
-	}))
-	err = mapper.T_Mapper.UpdateNodePatch(req.NodeIds, req.PackageId)
-	if err!= nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新服务器节点版本号失败", "error": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "部署服务器成功"})
 }
 
 func DeployServer(ctx *gin.Context) {
@@ -338,59 +214,59 @@ func DeployServer(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	RunServer(ctx, req, true)
+	var callRsp []*protocol.BasicRes
+	proxy.ProxyMap.FullDispatch(func(client *protocol.NodeServantClient) error {
+		rsp, err := (*client).ActivateServant(context.Background(), &protocol.ActivateReq{
+			ServerId:      int32(req.ServerId),
+			ServerNodeIds: constant.ConvertToInt32Slice(req.NodeIds),
+			Type:          constant.ACITVATE_DEPLOY,
+			PackageId: 		int32(req.PackageId),
+		})
+		callRsp = append(callRsp, rsp)
+		return err
+	})
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "部署服务成功", "data": callRsp})
 }
 
 func RestartServer(ctx *gin.Context) {
 	var req RUN_SERVER_REQ
-	if err := ctx.ShouldBindJSON(&req); err!= nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	RunServer(ctx, req, false)
+	var callRsp []*protocol.BasicRes
+	proxy.ProxyMap.FullDispatch(func(client *protocol.NodeServantClient) error {
+		rsp, err := (*client).ActivateServant(context.Background(), &protocol.ActivateReq{
+			ServerId:      int32(req.ServerId),
+			ServerNodeIds: constant.ConvertToInt32Slice(req.NodeIds),
+			Type:          constant.ACTIVATE_RESTART,
+		})
+		callRsp = append(callRsp, rsp)
+		return err
+	})
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "部署服务成功", "data": callRsp})
 }
-
 
 func StopServer(ctx *gin.Context) {
 	var req struct {
-		ServerId  int   `json:"serverId"`
-		NodeIds   []int `json:"nodeIds"`
+		ServerId int   `json:"serverId"`
+		NodeIds  []int `json:"nodeIds"`
 	}
-	if err := ctx.ShouldBindJSON(&req); err!= nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
-	if err!= nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器信息失败", "error": err.Error()})
-		return
-	}
-
-	for _, nodeId := range req.NodeIds {
-		currentCommand := command.CenterManager.GetCommand(nodeId)
-		if currentCommand!= nil {
-			err := currentCommand.Stop()
-			if err!= nil {
-				mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
-					ServerName: serverInfo.ServerName,
-					ServerId:   serverInfo.ID,
-					TYPE:       entity.TYPE_ERROR,
-					Content:    fmt.Sprintf("关停服务失败 %s | 节点 %s | 原因 %s", serverInfo.ServerName, req.NodeIds,err.Error()),
-					ServerNodeId: nodeId,
-				})
-				ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "停止服务器失败", "error": err.Error()})
-				return
-			}
-			command.CenterManager.RemoveCommand(nodeId)
-			mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
-				ServerName: serverInfo.ServerName,
-				ServerId:   serverInfo.ID,
-				TYPE:       entity.TYPE_SUCCESS,
-				Content:    fmt.Sprintf("关停服务 %s | 节点 %s", serverInfo.ServerName, req.NodeIds),
-			})
-		}
-	}
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "停止服务器成功"})
+	var callRsp []*protocol.BasicRes
+	proxy.ProxyMap.FullDispatch(func(client *protocol.NodeServantClient) error {
+		rsp, err := (*client).DeactivateServant(context.Background(), &protocol.ActivateReq{
+			ServerId:      int32(req.ServerId),
+			ServerNodeIds: constant.ConvertToInt32Slice(req.NodeIds),
+			Type:          constant.ACTIVATE_STOP,
+		})
+		callRsp = append(callRsp, rsp)
+		return err
+	})
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "部署服务成功", "data": callRsp})
 }
 
 func GetServerNodesLog(ctx *gin.Context) {
@@ -405,7 +281,7 @@ func GetServerNodes(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	res, err := mapper.T_Mapper.GetServerNodes(req.Id,0)
+	res, err := mapper.T_Mapper.GetServerNodes(req.Id, 0)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务器信息失败", "error": err.Error()})
 		return

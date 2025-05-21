@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"sgridnext.com/src/domain/config"
+	"sgridnext.com/src/config"
 )
 
 func Test_ReadJson(t *testing.T) {

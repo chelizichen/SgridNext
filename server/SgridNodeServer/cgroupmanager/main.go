@@ -12,7 +12,7 @@ import (
 )
 
 type CgroupManager struct {
-	cgroup  cgroups.Cgroup  // for v1
+	cgroup  cgroups.Cgroup     // for v1
 	cgroup2 *cgroupsv2.Manager // for v2
 	isV2    bool
 }
@@ -40,15 +40,15 @@ func LoadCgroupManager(name string) (*CgroupManager, error) {
 		// 使用 cgroup v2
 		groupPath := filepath.Join("/", name)
 		logger.Cgroup.Infof("debug | load cgroup groupPath | %s ", groupPath)
-		manager, err := cgroupsv2.LoadManager(defaultV2MountPath,groupPath)
+		manager, err := cgroupsv2.LoadManager(defaultV2MountPath, groupPath)
 		if err != nil {
 			logger.Cgroup.Errorf("failed to load cgroup v2 manager: %v", err)
 			return nil, fmt.Errorf("failed to load cgroup v2 manager: %v", err)
 		}
-		targetDir := filepath.Join(defaultV2MountPath,groupPath)
+		targetDir := filepath.Join(defaultV2MountPath, groupPath)
 		if _, err := os.Stat(targetDir); err != nil {
 			logger.Cgroup.Errorf("failed to stat cgroup v2 target directory: %v", err)
-			return nil,err
+			return nil, err
 		}
 		logger.Cgroup.Infof("load cgroup %s ", name)
 		return &CgroupManager{cgroup2: manager, isV2: true}, nil
@@ -57,7 +57,7 @@ func LoadCgroupManager(name string) (*CgroupManager, error) {
 	mountPath := cgroups.Slice("system.slice", name)
 	control, err := cgroups.Load(cgroups.Systemd, mountPath)
 	logger.Cgroup.Infof("load cgroup mountPath | %s ", mountPath)
-	if err!= nil {
+	if err != nil {
 		logger.Cgroup.Errorf("failed to load cgroup v1 manager: %v", err)
 		return nil, fmt.Errorf("failed to load cgroup v1 manager: %v", err)
 	}
@@ -68,7 +68,7 @@ func NewCgroupManager(name string) (*CgroupManager, error) {
 	// 先加载看有没有 Cgroup目录
 	manger, err := LoadCgroupManager(name)
 	if err == nil {
-		if manger.isV2{
+		if manger.isV2 {
 			// if manger.cgroup2
 		}
 		logger.Cgroup.Infof("cgroup %s already exists", name)
@@ -90,12 +90,14 @@ func NewCgroupManager(name string) (*CgroupManager, error) {
 		}
 		return &CgroupManager{cgroup2: manager, isV2: true}, nil
 	}
-
-	// 使用 cgroup v1
-	mountPath := cgroups.Slice("system.slice", name)
-	control, err := cgroups.New(cgroups.Systemd, mountPath, &specs.LinuxResources{})
+	control, err := cgroups.Load(cgroups.V1, cgroups.StaticPath("/"+name))
+	if err == nil {
+		return &CgroupManager{cgroup: control, isV2: false}, nil
+	}
+	// 如果不存在则创建新的
+	control, err = cgroups.New(cgroups.V1, cgroups.StaticPath("/"+name), &specs.LinuxResources{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cgroup v1 manager: %v", err)
+		return nil, fmt.Errorf("V1 | ERROR |failed to create cgroup: %v", err)
 	}
 	return &CgroupManager{cgroup: control, isV2: false}, nil
 }
@@ -122,7 +124,7 @@ func (cm *CgroupManager) SetCPULimit(cores float64) error {
 	// cgroup v1 实现
 	period := uint64(100000)
 	quota := int64(float64(period) * cores)
-	
+
 	return cm.cgroup.Update(&specs.LinuxResources{
 		CPU: &specs.LinuxCPU{
 			Period: &period,
@@ -152,7 +154,7 @@ func (cm *CgroupManager) SetMemoryLimit(memoryLimit int64) error {
 }
 
 func (cm *CgroupManager) AddProcess(pid int) error {
-	logger.Cgroup.Infof("add process %d to cgroup |  isV2 %s", pid,cm.isV2)
+	logger.Cgroup.Infof("add process %d to cgroup |  isV2 %s", pid, cm.isV2)
 	if cm.isV2 {
 		return cm.cgroup2.AddProc(uint64(pid))
 	}
@@ -197,9 +199,9 @@ func convertSharesToWeight(shares uint64) uint64 {
 
 type SgridCgroup struct {
 	ServerName string
-	NodeId int
+	NodeId     int
 }
 
-func (s *SgridCgroup)GetCgroupName() string {
+func (s *SgridCgroup) GetCgroupName() string {
 	return fmt.Sprintf("sgrid-%s-%d", s.ServerName, s.NodeId)
 }

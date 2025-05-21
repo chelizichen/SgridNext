@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/c4milo/unpackit"
+	"sgridnext.com/server/SgridNodeServer/command"
 	"sgridnext.com/src/constant"
-	"sgridnext.com/src/domain/command"
 	"sgridnext.com/src/logger"
 )
 
@@ -67,10 +67,11 @@ func (p *pathUtils) GetConfigFileContent(serverName, configName string) (string,
 	}
 	return string(configContent), nil
 }
+
 // 新配置文件进来，先创建时间备份的配置文件
 // 再删除旧的配置文件
 // 最后更新新的配置文件
-func (p *pathUtils) UpdateConfigFileContent(serverName, configName, configContent string) (string,error) {
+func (p *pathUtils) UpdateConfigFileContent(serverName, configName, configContent string) (string, error) {
 	cwd, _ := os.Getwd()
 	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
 	logger.Config.Infof("configPath: %s", configPath)
@@ -81,16 +82,16 @@ func (p *pathUtils) UpdateConfigFileContent(serverName, configName, configConten
 	backupPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, backupName)
 	logger.Config.Infof("backupPath: ", backupPath)
 	err := os.WriteFile(backupPath, []byte(configContent), 0644)
-	if err!= nil {
+	if err != nil {
 		logger.Config.Errorf("failed to backup config: %v", err)
-		return "",err
+		return "", err
 	}
 	err = os.Remove(configPath)
-	if err!= nil {
+	if err != nil {
 		logger.Config.Errorf("failed to remove config: %v", err)
 		// return err
 	}
-	return backupPath,os.WriteFile(configPath, []byte(configContent), 0644)
+	return backupPath, os.WriteFile(configPath, []byte(configContent), 0644)
 }
 
 // 计算文件hash
@@ -115,12 +116,12 @@ func (p *pathUtils) RenamePackage(oldPath string, newPath string) error {
 }
 
 // SgridTestServer.tar.gz 改名成 SgridTestServer_1234567890.tar.gz
-func (p *pathUtils) RenamePackageWithHash(oldPath string, hash string) (string,error) {
+func (p *pathUtils) RenamePackageWithHash(oldPath string, hash string) (string, error) {
 	ext := filepath.Ext(oldPath)
 	newPath := oldPath[:len(oldPath)-len(ext)] + "_" + hash + ext
 	err := os.Rename(oldPath, newPath)
 	newFileName := filepath.Base(newPath)
-	return newFileName,err
+	return newFileName, err
 }
 
 // func (p *pathUtils) InitServer(serverInfo *ServerInfo) (*command.Command,error) {
@@ -140,8 +141,7 @@ func (p *pathUtils) StartServer(cmd *command.Command) (int, error) {
 	return cmd.GetCmd().Process.Pid, nil
 }
 
-
-func (p *pathUtils)Tar2Dest(src, dest string) error {
+func (p *pathUtils) Tar2Dest(src, dest string) error {
 	file, err := os.Open(src)
 	if err != nil {
 		fmt.Println("Open Error", err.Error())
@@ -156,7 +156,7 @@ func (p *pathUtils)Tar2Dest(src, dest string) error {
 	return nil
 }
 
-func (p *pathUtils)Contains(nodes []int , node int ) (bool) {
+func (p *pathUtils) Contains(nodes []int, node int) bool {
 	for _, n := range nodes {
 		if n == node {
 			return true
@@ -168,17 +168,17 @@ func (p *pathUtils)Contains(nodes []int , node int ) (bool) {
 // 回退
 // args | serverName | configName | newConfigName
 // TestServer | sgrid.yml | sgrid_1234567890.yml
-func (p *pathUtils)BackConfigFile(serverName,originConfigName, newConfigName string) error {
+func (p *pathUtils) BackConfigFile(serverName, originConfigName, newConfigName string) error {
 	cwd, _ := os.Getwd()
 	newConfig := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, newConfigName)
 	originPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, originConfigName)
 	if _, err := os.Stat(originPath); err == nil {
-		if err := os.Remove(originPath); err!= nil {
+		if err := os.Remove(originPath); err != nil {
 			return fmt.Errorf("failed to remove originPath config: %v", err)
 		}
 	}
-	bytes,err := os.ReadFile(newConfig)
-	if err!= nil {
+	bytes, err := os.ReadFile(newConfig)
+	if err != nil {
 		logger.Config.Errorf("failed to backup config: %v", err)
 		return err
 	}

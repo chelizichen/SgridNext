@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"sgridnext.com/src/domain/patchutils"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
+	"sgridnext.com/src/patchutils"
 )
 
 func UpsertConfig(ctx *gin.Context) {

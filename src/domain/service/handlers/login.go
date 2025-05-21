@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"sgridnext.com/src/domain/config"
+	"sgridnext.com/src/config"
 )
 
 type PlatformCredentials struct {

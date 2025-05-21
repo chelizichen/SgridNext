@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
+	"sgridnext.com/src/config"
 	"sgridnext.com/src/db"
-	"sgridnext.com/src/domain/config"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/domain/service/routes"
+	"sgridnext.com/src/proxy"
 )
 
 func main() {
@@ -15,10 +18,10 @@ func main() {
 		panic(err)
 	}
 	mapper.LoadMapper(ormDb)
-
+	proxy.LoadProxy()
 	// 初始化路由
 	engine := gin.Default()
 	routes.LoadRoutes(engine)
-
-	engine.Run(":15872")
+	port := fmt.Sprintf(":%s",conf.Get("httpPort"))
+	engine.Run(port)
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"sgridnext.com/src/domain/patchutils"
+	"sgridnext.com/src/patchutils"
 )
 
 func Test_Config() {

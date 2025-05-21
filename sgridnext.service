@@ -1,0 +1,9 @@
+[Unit]
+Description = sgrid next,A cloud platform for grid computing
+
+[Service]
+Type = simple
+ExecStart = /usr/sgridnext/sgridnext
+WorkingDirectory = /usr/sgridnext
+Environment=PATH=/usr/bin:/usr/local/bin
+Restart = no

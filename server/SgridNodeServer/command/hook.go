@@ -1,7 +1,7 @@
 package command
 
 import (
-	"sgridnext.com/src/domain/cgroupmanager"
+	"sgridnext.com/server/SgridNodeServer/cgroupmanager"
 	"sgridnext.com/src/logger"
 )
 

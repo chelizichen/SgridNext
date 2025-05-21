@@ -11,9 +11,9 @@ import (
 
 type Config map[string]interface{}
 
-func (c Config) Get(args... string) string {
+func (c Config) Get(args ...string) string {
 	defer func() {
-		if err := recover(); err!= nil {
+		if err := recover(); err != nil {
 			logger.App.Errorf("config get error: %v", err)
 		}
 	}()
@@ -31,8 +31,8 @@ func (c Config) Get(args... string) string {
 }
 
 func (c Config) GetLocalNodeId() int {
-	nodeId,err := strconv.Atoi(c.Get("nodeIndex"))
-	if err!= nil {
+	nodeId, err := strconv.Atoi(c.Get("nodeIndex"))
+	if err != nil {
 		panic("本地节点ID获取失败")
 	}
 	return nodeId
@@ -40,12 +40,12 @@ func (c Config) GetLocalNodeId() int {
 
 var Conf = make(Config)
 
-func LoadConfig(fileName string)Config{
+func LoadConfig(fileName string) Config {
 	Conf = ReadJson(fileName)
 	return Conf
 }
 
-func ReadJson(filePath string)Config {
+func ReadJson(filePath string) Config {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil
@@ -59,4 +59,3 @@ func ReadJson(filePath string)Config {
 
 	return result
 }
-

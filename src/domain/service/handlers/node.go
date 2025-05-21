@@ -1,16 +1,15 @@
 package handlers
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/src/constant"
-	"sgridnext.com/src/domain/command"
-	"sgridnext.com/src/domain/config"
-	"sgridnext.com/src/domain/patchutils"
 	"sgridnext.com/src/domain/service/entity"
 	"sgridnext.com/src/domain/service/mapper"
+	"sgridnext.com/src/proxy"
 )
 
 func GetNodeList(ctx *gin.Context) {
@@ -90,50 +89,14 @@ func CheckServerNodesStatus(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	serverInfo,err := mapper.T_Mapper.GetServerInfo(req.ServerId)
-	if err != nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务信息失败", "error": "server not found"})
-		return
-	}
-	localBindServerNodes,err := mapper.T_Mapper.GetServerNodes(req.ServerId,config.Conf.GetLocalNodeId())
-	for _, v := range localBindServerNodes {
-		// 检查本地是否存在
-		if !patchutils.T_PatchUtils.Contains(req.ServerNodeIds, v.Id) {
-			continue
-		}
-		c := command.CenterManager.GetCommand(v.Id)
-		if c == nil {
-			mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
-				ServerId:     req.ServerId,
-				ServerNodeId: v.Id,
-				TYPE:         entity.TYPE_CHECK,
-				Content: 		fmt.Sprintf("nodeId %d is not alive", v),
-				ServerName:   serverInfo.ServerName,
-			})
-			mapper.T_Mapper.UpdateNodeStatus(v.Id, constant.COMM_STATUS_OFFLINE)
-			continue
-		}
-		pid,alive,err := c.CheckStat()
-		if err != nil {
-			mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
-				ServerId:     req.ServerId,
-				ServerNodeId: v.Id,
-				TYPE:         entity.TYPE_CHECK,
-				Content: 		fmt.Sprintf("nodeId %d is not alive ,error %s", v,err.Error()),
-				ServerName:   serverInfo.ServerName,
-			})
-			mapper.T_Mapper.UpdateNodeStatus(v.Id, constant.COMM_STATUS_OFFLINE)
-			continue
-		}
-		mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{
-			ServerId:     req.ServerId,
-			ServerNodeId: v.Id,
-			TYPE:         entity.TYPE_CHECK,
-			Content: 	fmt.Sprintf("serverName: %s, nodeId: %d, pid: %d, alive: %v", 
-													serverInfo.ServerName,v,pid, alive),
-			ServerName:   serverInfo.ServerName,
+	var callRsp []*protocol.BasicRes
+	proxy.ProxyMap.FullDispatch(func(client *protocol.NodeServantClient) error {
+		rsp, err := (*client).CheckStat(context.Background(), &protocol.CheckStatReq{
+			ServerId:      int32(req.ServerId),
+			NodeIds: constant.ConvertToInt32Slice(req.ServerNodeIds),
 		})
-		mapper.T_Mapper.UpdateNodeStatus(v.Id, constant.COMM_STATUS_ONLINE)
-	}
+		callRsp = append(callRsp, rsp)
+		return err
+	})
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "已检查完成"})
 }

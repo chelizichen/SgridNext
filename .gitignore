@@ -27,7 +27,8 @@ dist-ssr
 
 *.tar.gz
 
-SgridNext
+sgridnext
+/server/SgridNodeServer/sgridnode
 
 ContainerTest
 

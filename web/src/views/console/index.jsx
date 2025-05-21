@@ -143,12 +143,12 @@ export default function Console(){
             }
             setServerNodes(res.data);
             console.log('res',res);
-            getStatus({
-                nodeIds:res.data.map(v=>v.id),
-                serverId:serverId
-            }).then(res=>{
-                console.log('getStatus.res',res);
-            })
+            // getStatus({
+            //     nodeIds:res.data.map(v=>v.id),
+            //     serverId:serverId
+            // }).then(res=>{
+            //     console.log('getStatus.res',res);
+            // })
 
             checkServerNodesStatus({
                 server_id:serverId,
@@ -305,6 +305,16 @@ export default function Console(){
         setHistoryData(serverConfigList[fileName]);
         setHistoryModelVisible(true);
     }
+    function switchType(type){
+        switch(type){
+            case 1:
+                return {color:'green'}
+            case 2:
+                return {color:'red'}
+            default:
+                return {color:'black'}
+        }
+    }
     return (
         <div style={{ padding: 24 }}>
             {contextHolder}
@@ -430,7 +440,7 @@ export default function Console(){
                                 <List.Item>
                                     {item.CreateTime}-{getServerNodeStatusType(item.TYPE)}-
                                     <span style={
-                                        item.TYPE === 2 ? {color:'red'} : {color:'black'}
+                                        switchType(item.TYPE)
                                     } >{item.Content}</span>
                                 </List.Item>
                             )}

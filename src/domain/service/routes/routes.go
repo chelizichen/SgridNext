@@ -59,9 +59,14 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/cgroup/setMemLimit", handlers.SetMemoryLimit)
 	// CGROUP 获取 服务 STATUS
 	group.POST("/server/cgroup/getStatus", handlers.GetStatus)
+	// 获取文件
+	group.POST("/server/getFile",handlers.GetFile)
+	// 获取发布时对应的配置文件列表
+	group.POST("/server/getConfigList",handlers.GetConfigList)
 	// 登录
 	group.POST("/login", handlers.Login)
 
+	// 前端静态文件
 	cwd,_ := os.Getwd()
 	root := filepath.Join(cwd,"dist")
 	fmt.Println("web root:",root)
