@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, List, Divider, Tree, Button, Modal, Form, InputNumber, Table, Input, message } from 'antd';
+import { useMediaQuery } from 'react-responsive';
 import ButtonGroup from 'antd/es/button/button-group';
 import {  checkServerNodesStatus, getGroupList, getNodeList, getServerConfigList, getServerInfo, getServerList, getServerNodes,getServerNodesStatus,getStatus, restartServer, stopServer } from './api';
 import { getServerNodeStatusType, getServerType } from './constant';
@@ -81,6 +82,8 @@ const NodeColumns = [
 ]
 
 export default function Console(){
+    // 检测是否为移动设备
+    const isMobile = useMediaQuery({ maxWidth: 1000 });
     const [messageApi, contextHolder] = message.useMessage();
     const [resourceModalVisible, setResourceModalVisible] = useState(false);
     const [groupModalVisible, setGroupModalVisible] = useState(false);
@@ -318,13 +321,13 @@ export default function Console(){
     return (
         <div style={{ padding: 24 }}>
             {contextHolder}
-            <Row gutter={16}>
-                <Col span={8}>
+            <Row gutter={isMobile ? 8 : 16}>
+                <Col span={isMobile ? 24 : 8}>
                     <Card title="服务总揽"
                         variant={false} extra={
-                        <ButtonGroup>
-                            <Button onClick={handleRefresh}  style={{marginLeft:'16px'}}>刷新</Button>
-                            <Button onClick={()=>setGroupModalVisible(true)}>创建组</Button>
+                        <ButtonGroup style={isMobile ? {display: 'flex', flexDirection: 'column'} : {}}>
+                            <Button onClick={handleRefresh} style={{marginLeft: isMobile ? 0 : '16px', marginBottom: isMobile ? '8px' : 0}}>刷新</Button>
+                            <Button onClick={()=>setGroupModalVisible(true)} style={{marginBottom: isMobile ? '8px' : 0}}>创建组</Button>
                             <Button onClick={()=>setServerModalVisible(true)}>添加服务</Button>
                         </ButtonGroup>
                     }>
@@ -335,8 +338,8 @@ export default function Console(){
                     </Card>
                     <Divider />
                     <Card title="配置文件" extra={
-                        <ButtonGroup>
-                            <Button onClick={initServersAndNodes}>刷新</Button>
+                        <ButtonGroup style={isMobile ? {display: 'flex', flexDirection: 'column'} : {}}>
+                            <Button onClick={initServersAndNodes} style={{marginBottom: isMobile ? '8px' : 0}}>刷新</Button>
                             <Button onClick={()=>handleUpsertConfig(2)}>上传</Button>
                         </ButtonGroup>
                     }>
@@ -359,8 +362,8 @@ export default function Console(){
                     <Divider />
                     <Card title="节点列表" extra={
                         <>
-                            <ButtonGroup>
-                                <Button onClick={initServersAndNodes}>刷新</Button>
+                            <ButtonGroup style={isMobile ? {display: 'flex', flexDirection: 'column'} : {}}>
+                                <Button onClick={initServersAndNodes} style={{marginBottom: isMobile ? '8px' : 0}}>刷新</Button>
                                 <Button onClick={()=>setAddNodeVisible(true)}>新增节点</Button>
                             </ButtonGroup>
                         </>
@@ -370,11 +373,13 @@ export default function Console(){
                             bordered
                             dataSource={nodes}
                             columns={NodeColumns}
+                            scroll={isMobile ? { x: 'max-content' } : undefined}
+                            pagination={isMobile ? { pageSize: 5 } : undefined}
                         >
                         </Table>
                     </Card>
                 </Col>
-                <Col span={16}>
+                <Col span={isMobile ? 24 : 16}>
                     <Card title="服务信息" variant={true} extra={<Button onClick={handleRefresh}>刷新</Button>}>
                         {serverInfo ? (
                             <Descriptions>
@@ -391,14 +396,14 @@ export default function Console(){
                     </Card>
                     <Divider />
                     <Card title="服务节点列表" variant={false} extra={
-                        <div>
-                            <Button onClick={handleRefresh}>刷新</Button>
-                            <ButtonGroup style={{marginLeft:"16px"}}>
-                                <Button onClick={handleSetDeployModalVisible}>部署</Button>
-                                <Button onClick={handleRestartServerNodes}>重启</Button>
-                                <Button onClick={handleSetResourceModalVisible}>资源配置</Button>
-                                <Button onClick={() => setScaleModalVisible(true)}>扩容</Button>
-                                <Button onClick={() => handleStopServerNodes()}>停止</Button>
+                        <div style={isMobile ? {display: 'flex', flexDirection: 'column'} : {}}>
+                            <Button onClick={handleRefresh} style={{marginBottom: isMobile ? '8px' : 0}}>刷新</Button>
+                            <ButtonGroup style={isMobile ? {display: 'flex', flexDirection: 'column', width: '100%'} : {marginLeft:"16px"}}>
+                                <Button onClick={handleSetDeployModalVisible} style={{marginBottom: isMobile ? '8px' : 0}}>部署</Button>
+                                <Button onClick={handleRestartServerNodes} style={{marginBottom: isMobile ? '8px' : 0}}>重启</Button>
+                                <Button onClick={handleSetResourceModalVisible} style={{marginBottom: isMobile ? '8px' : 0}}>资源配置</Button>
+                                <Button onClick={() => setScaleModalVisible(true)} style={{marginBottom: isMobile ? '8px' : 0}}>扩容</Button>
+                                <Button onClick={() => handleStopServerNodes()} style={{marginBottom: isMobile ? '8px' : 0}}>停止</Button>
                                 <Button onClick={handleRefresh} danger>删除</Button>
                             </ButtonGroup>
                         </div>
@@ -409,10 +414,12 @@ export default function Console(){
                             columns={ServerNodesColumns}
                             dataSource={serverNodes}
                             rowKey="id"
+                            scroll={isMobile ? { x: 'max-content' } : undefined}
+                            pagination={isMobile ? { pageSize: 5 } : undefined}
                         />
                     </Card>
                     <Divider />
-                    <Card title="服务状态日志" bo={false} extra={<Button onClick={handleRefresh}>刷新</Button>}>
+                    <Card title="服务状态日志" bo={false} extra={<Button onClick={handleRefresh} style={isMobile ? {width: '100%'} : {}}>刷新</Button>}>
                         <List
                             pagination={{
                                 pageSize: 10,
