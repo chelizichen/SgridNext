@@ -55,6 +55,7 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 			err = api.GetFile(api.FileReq{
 				FileName: packageFileName,
 				Type:     constant.FILE_TYPE_PACKAGE,
+				ServerId: serverId,
 			})
 			if err != nil {
 				return CODE_FAIL, "下载服务包失败: " + err.Error()

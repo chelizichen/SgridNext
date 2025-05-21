@@ -47,9 +47,9 @@ func GetFile(req FileReq) error {
 
 	var filePath string
 	cwd, _ := os.Getwd()
-	// serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
-	// serverName := serverInfo.ServerName
-	serverName := "SgridTestJavaServer"
+	serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
+	serverName := serverInfo.ServerName
+	// serverName := "SgridTestJavaServer"
 	switch req.Type {
 	case constant.FILE_TYPE_PACKAGE:
 		filePath = filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, serverName, req.FileName)

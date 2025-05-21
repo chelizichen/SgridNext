@@ -100,7 +100,9 @@ func (c *Command) Stop() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.cmd == nil || c.cmd.Process == nil {
-		return fmt.Errorf("command not initialized")
+		logger.CMD.Infof("command not initialized")
+		// 进程未启动，直接返回nil
+		return nil
 	}
 	if err := c.cmd.Process.Kill(); err != nil {
 		if errors.Is(err, os.ErrProcessDone) {
