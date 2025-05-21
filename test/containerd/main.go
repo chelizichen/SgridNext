@@ -1,8 +1,8 @@
 package main
 
 import (
-	"sgridnext.com/src/cgroupmanager"
-	"sgridnext.com/src/command"
+	"sgridnext.com/server/SgridNodeServer/cgroupmanager"
+	"sgridnext.com/server/SgridNodeServer/command"
 )
 
 func setCpuTest(){

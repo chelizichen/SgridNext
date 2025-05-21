@@ -2,7 +2,7 @@
 
 # if permission denied
 # run script with ` chmod +x build.sh `
-readonly ServerName="TestHighCpuServer"
+readonly ServerName="SgridTestGoServer"
 
 
 # compile
