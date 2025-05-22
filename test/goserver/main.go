@@ -2,11 +2,11 @@ package main
 
 // GOOS=linux GOARCH=amd64 go build -o $ServerName
 import (
+	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"sgridnext.com/src/logger"
 )
 
 func fib(n int) int {
@@ -18,17 +18,17 @@ func fib(n int) int {
 
 func main() {
 	port := os.Getenv("SGRID_TARGET_PORT")
-	logger.App.Info("SGRID_TARGET_PORT: ", port)
+	fmt.Println("SGRID_TARGET_PORT: ", port)
 	if port == "" {
-		logger.App.Info("SGRID_TARGET_PORT is empty")
+		fmt.Println("SGRID_TARGET_PORT is empty")
+		port = "10010"
 	}
-	port = "10010"
 	host := os.Getenv("SGRID_TARGET_HOST")
-	logger.App.Info("SGRID_TARGET_HOST: ", port)
+	fmt.Println("SGRID_TARGET_HOST: ", port)
 	if host == "" {
-		logger.App.Info("SGRID_TARGET_HOST is empty")
+		fmt.Println("SGRID_TARGET_HOST is empty")
+		host = "0.0.0.0"
 	}
-	host = "0.0.0.0"
 
 	engine := gin.Default()
 	engine.GET("/fib", func(ctx *gin.Context) {

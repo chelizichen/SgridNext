@@ -1,0 +1,8 @@
+# 发布地址
+DEPLOY_PATH = "http://124.220.19.199:15872/"
+
+# 服务ID
+SERVER_ID = 4
+
+# 包地址
+PACKAGE_PATH = "/archive/SgridTestJavaServer"
