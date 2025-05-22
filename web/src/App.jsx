@@ -23,7 +23,12 @@ export default function App() {
             mode="horizontal"
             defaultSelectedKeys={['2']}
           >
-            <Menu.Item key="1">SgridNext</Menu.Item>
+            <Menu.Item key="1">
+              <div style={{display:"flex",alignItems:"center"}}>
+                <img src="sgridcloud.png" style={{width:"50px",height:"50px","borderRadius":"100%","marginRight":"20px"}}></img>
+                <div>SgridNext</div>
+              </div>
+            </Menu.Item>
             <Menu.Item key="2" onClick={() => navigate('/console')}>控制台</Menu.Item>
             <Menu.Item key="3" onClick={() => navigate('/control')}>管理中心</Menu.Item>
           </Menu>
