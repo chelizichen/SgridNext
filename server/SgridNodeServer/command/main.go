@@ -19,7 +19,12 @@ type Command struct {
 	nodeId     int
 	mu         sync.Locker
 	pid    		int
+	host string
+	port int
+	localMachineId int
+	serverId int
 }
+
 
 func NewServerCommand(serverName string) *Command {
 	return &Command{
@@ -37,6 +42,37 @@ func NewPidCommand(pid int,serverName string,nodeId int) *Command {
 	cmd.SetPid(pid)
 	cmd.SetNodeId(nodeId)
 	return cmd
+}
+
+func (c *Command) SetHost(host string) {
+	c.host = host
+}
+func (c *Command) GetHost() string {
+	return c.host
+}
+
+func (c *Command) SetPort(port int) {
+	c.port = port
+}
+
+func (c *Command) GetPort() int {
+	return c.port
+}
+
+func (c *Command) SetLocalMachineId(localMachineId int) {
+	c.localMachineId = localMachineId
+}
+
+func (c *Command) GetLocalMachineId() int {
+	return c.localMachineId
+}
+
+func (c *Command) SetServerId(serverId int) {
+	c.serverId = serverId
+}
+
+func (c *Command) GetServerId() int {
+	return c.serverId
 }
 
 func (c *Command) GetCmd() *exec.Cmd {

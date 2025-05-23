@@ -112,6 +112,10 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 		}
 		logger.Server.Infof("DeployServer | patchServerInfo | %v", patchServerInfo)
 		cmd, err := patchServerInfo.CreateCommand()
+		cmd.SetHost(node.Host)
+		cmd.SetPort(node.Port)
+		cmd.SetLocalMachineId(localNodeId)
+		cmd.SetServerId(serverId)
 		if err != nil {
 			logger.Server.Infof("DeployServer | err | %v", err)
 			// ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "创建服务器命令失败", "error": err.Error()})

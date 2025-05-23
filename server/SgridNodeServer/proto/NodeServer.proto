@@ -6,6 +6,16 @@ import "google/protobuf/empty.proto";
 
 option go_package = ".;protocol";
 
+message GetNodeStatRsp{
+    int32 code = 1;
+    string msg = 2; 
+    string data = 3; // 节点状态内容，json格式
+}
+
+message SyncStatReq{
+    string data = 1; // 节点状态内容，json格式
+}
+
 message activateReq{
     int32 serverId = 1;
     int32 packageId = 2;
@@ -41,6 +51,10 @@ message CheckStatReq{
 service NodeServant {
     // 节点心跳
     rpc KeepAlive(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    // 获取节点服务状态
+    rpc GetNodeStat(google.protobuf.Empty) returns (GetNodeStatRsp) {}
+    // 同步所有节点状态
+    rpc SyncAllNodeStat(SyncStatReq) returns (basicRes) {}
     // 唤起
     rpc ActivateServant(activateReq) returns (basicRes) {}
     // 关闭

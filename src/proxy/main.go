@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/domain/service/mapper"
@@ -96,7 +98,14 @@ func LoadProxy() {
 	// 定时同步节点信息
 	ticker := time.NewTicker(30 * time.Second)
 	go func() {
+		NodesStatMap := &command.SvrNodeStatMap{
+			UpdateTime: constant.GetCurrentTime(),
+			StatList: make([]*command.SvrNodeStat, 0),
+		}
 		for range ticker.C {
+			NodesStatMap.UpdateTime = constant.GetCurrentTime()
+			NodesStatMap.StatList = nil
+			NodesStatMap.StatList = make([]*command.SvrNodeStat, 0)
 			// 拉取所有 节点
 			nodes, err := mapper.T_Mapper.GetNodeList()
 			if err != nil {
@@ -113,6 +122,13 @@ func LoadProxy() {
 							logger.Alive.Errorf("节点 | %s | 挂了 | %s", node.ID, err.Error())
 							continue
 						}
+						nodeStatData,err  := (*ProxyMap.items[node.ID].Proxy).GetNodeStat(context.Background(), &emptypb.Empty{})
+						if err != nil{
+							logger.Alive.Errorf("节点 | %s | 获取状态异常 | %s", node.ID, err.Error())
+						}
+						var svrNodeMap *command.SvrNodeStatMap
+						json.Unmarshal([]byte(nodeStatData.Data),&svrNodeMap)
+						NodesStatMap.StatList = append(NodesStatMap.StatList, svrNodeMap.StatList...)
 						mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_ONLINE)
 					} else {
 						// 在线，不在节点中，可能为新添加的
@@ -141,6 +157,27 @@ func LoadProxy() {
 						// pass
 					}
 				}
+			}
+			for _, node := range nodes{
+				if node.NodeStatus != constant.COMM_STATUS_ONLINE {
+					continue
+				}
+				if !patchutils.T_PatchUtils.Contains(ProxyMap.GetNodes(), node.ID) {
+					continue
+				}
+				jsonStr,err  := json.Marshal(NodesStatMap)
+				if err != nil {
+					logger.Alive.Errorf("全量节点同步失败 | 序列化 ｜ %s",err.Error())
+					continue
+				}
+				syncRsp,err := (*ProxyMap.items[node.ID].Proxy).SyncAllNodeStat(context.Background(),&protocol.SyncStatReq{
+					Data: string(jsonStr),
+				})
+				if err != nil{
+					logger.Alive.Errorf("全量节点同步失败 | 发送失败 ｜ %s",err.Error())
+					continue
+				}
+				logger.Alive.Infof("全量同步成功 | %v",syncRsp)
 			}
 		}
 	}()

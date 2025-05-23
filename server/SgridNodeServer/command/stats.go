@@ -8,7 +8,22 @@ import (
 	"sgridnext.com/src/logger"
 )
 
-func LoadStatList() []*SvrNodeStat {
+type SvrNodeStat struct {
+	NodeId     int    `json:"node_id,omitempty"`     // 服务节点ID
+	ServerName string `json:"server_name,omitempty"` // 服务名称
+	Pid        int    `json:"pid,omitempty"`         // Pid
+	ServerHost string `json:"host,omitempty"`        // 主机地址
+	ServerPort int    `json:"port,omitempty"`        // 主机端口
+	MachineId  int    `json:"machine_id,omitempty"`  // 机器ID
+	ServerId   int    `json:"server_id,omitempty"`   // 服务ID
+}
+
+type SvrNodeStatMap struct {
+	UpdateTime string         `json:"update_time,omitempty"`
+	StatList   []*SvrNodeStat `json:"stat_list,omitempty"`
+}
+
+func LoadStatList() *SvrNodeStatMap {
 	cwd, _ := os.Getwd()
 	stat_path := filepath.Join(cwd, "stat.json")
 	jsonStr, err := os.ReadFile(stat_path)
@@ -16,24 +31,27 @@ func LoadStatList() []*SvrNodeStat {
 		logger.App.Errorf("读取stat.json文件失败: %v", err)
 		return nil
 	}
-	var snsList []*SvrNodeStat
-	err = json.Unmarshal(jsonStr, &snsList)
+	var statMap *SvrNodeStatMap
+	err = json.Unmarshal(jsonStr, &statMap)
 	if err != nil {
 		logger.App.Errorf("解析stat.json文件失败: %v", err)
 		return nil
 	}
-	return snsList
+	return statMap
 }
 
 func InitCommands(snsList []*SvrNodeStat) {
 	for _, svr := range snsList {
-		CenterManager.AddCommand(svr.NodeId,
-			NewPidCommand(
-				svr.Pid,
-				svr.ServerName,
-				svr.NodeId,
-			),
+		cmd := NewPidCommand(
+			svr.Pid,
+			svr.ServerName,
+			svr.NodeId,
 		)
+		cmd.SetHost(svr.ServerHost)
+		cmd.SetPort(svr.ServerPort)
+		cmd.SetLocalMachineId(svr.MachineId)
+		cmd.SetServerId(svr.ServerId)
+		CenterManager.AddCommand(svr.NodeId,cmd)
 	}
 }
 
@@ -50,29 +68,27 @@ func LoadSvrStat(snsList []*SvrNodeStat, nodeid int) *SvrNodeStat {
 	return nil
 }
 
-type SvrNodeStat struct {
-	NodeId     int    `json:"node_id,omitempty"`
-	ServerName string `json:"server_name,omitempty"`
-	Pid        int    `json:"pid,omitempty"`
-}
-
-func (cm *centerManager) SyncStat() {
+func (cm *centerManager) SyncStat(createTime string) {
 	cwd, _ := os.Getwd()
 	stat_path := filepath.Join(cwd, "stat.json")
 	// 将这块信息同步到本地文件
-	var snsList []*SvrNodeStat
+	statMap := &SvrNodeStatMap{
+		StatList: make([]*SvrNodeStat, 0),
+		UpdateTime: createTime,
+	}
 	for _, cmd := range cm.GetCommands() {
 		sns := &SvrNodeStat{
 			NodeId:     cmd.GetNodeId(),
 			ServerName: cmd.GetServerName(),
 			Pid:        cmd.GetPid(),
+			MachineId:  cmd.GetLocalMachineId(),
+			ServerHost: cmd.GetHost(),
+			ServerPort: cmd.GetPort(),
+			ServerId: 	cmd.GetServerId(),
 		}
-		snsList = append(snsList, sns)
+		statMap.StatList = append(statMap.StatList, sns)
 	}
-	if snsList == nil {
-		snsList = make([]*SvrNodeStat, 0)
-	}
-	jsonStr, _ := json.Marshal(snsList)
+	jsonStr, _ := json.Marshal(statMap)
 	logger.Alive.Infof("同步状态: SyncStat ｜%s", string(jsonStr))
 	outFile, err := os.OpenFile(stat_path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {

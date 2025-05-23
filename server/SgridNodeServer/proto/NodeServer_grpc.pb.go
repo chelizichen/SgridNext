@@ -25,6 +25,10 @@ const _ = grpc.SupportPackageIsVersion7
 type NodeServantClient interface {
 	// 节点心跳
 	KeepAlive(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 获取节点服务状态
+	GetNodeStat(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNodeStatRsp, error)
+	// 同步所有节点状态
+	SyncAllNodeStat(ctx context.Context, in *SyncStatReq, opts ...grpc.CallOption) (*BasicRes, error)
 	// 唤起
 	ActivateServant(ctx context.Context, in *ActivateReq, opts ...grpc.CallOption) (*BasicRes, error)
 	// 关闭
@@ -50,6 +54,24 @@ func NewNodeServantClient(cc grpc.ClientConnInterface) NodeServantClient {
 func (c *nodeServantClient) KeepAlive(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/SgridProtocol.NodeServant/KeepAlive", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServantClient) GetNodeStat(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNodeStatRsp, error) {
+	out := new(GetNodeStatRsp)
+	err := c.cc.Invoke(ctx, "/SgridProtocol.NodeServant/GetNodeStat", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServantClient) SyncAllNodeStat(ctx context.Context, in *SyncStatReq, opts ...grpc.CallOption) (*BasicRes, error) {
+	out := new(BasicRes)
+	err := c.cc.Invoke(ctx, "/SgridProtocol.NodeServant/SyncAllNodeStat", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +138,10 @@ func (c *nodeServantClient) CheckStat(ctx context.Context, in *CheckStatReq, opt
 type NodeServantServer interface {
 	// 节点心跳
 	KeepAlive(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	// 获取节点服务状态
+	GetNodeStat(context.Context, *emptypb.Empty) (*GetNodeStatRsp, error)
+	// 同步所有节点状态
+	SyncAllNodeStat(context.Context, *SyncStatReq) (*BasicRes, error)
 	// 唤起
 	ActivateServant(context.Context, *ActivateReq) (*BasicRes, error)
 	// 关闭
@@ -137,6 +163,12 @@ type UnimplementedNodeServantServer struct {
 
 func (UnimplementedNodeServantServer) KeepAlive(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method KeepAlive not implemented")
+}
+func (UnimplementedNodeServantServer) GetNodeStat(context.Context, *emptypb.Empty) (*GetNodeStatRsp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNodeStat not implemented")
+}
+func (UnimplementedNodeServantServer) SyncAllNodeStat(context.Context, *SyncStatReq) (*BasicRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncAllNodeStat not implemented")
 }
 func (UnimplementedNodeServantServer) ActivateServant(context.Context, *ActivateReq) (*BasicRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ActivateServant not implemented")
@@ -183,6 +215,42 @@ func _NodeServant_KeepAlive_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NodeServantServer).KeepAlive(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeServant_GetNodeStat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServantServer).GetNodeStat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/SgridProtocol.NodeServant/GetNodeStat",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServantServer).GetNodeStat(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeServant_SyncAllNodeStat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncStatReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServantServer).SyncAllNodeStat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/SgridProtocol.NodeServant/SyncAllNodeStat",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServantServer).SyncAllNodeStat(ctx, req.(*SyncStatReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -305,6 +373,14 @@ var NodeServant_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "KeepAlive",
 			Handler:    _NodeServant_KeepAlive_Handler,
+		},
+		{
+			MethodName: "GetNodeStat",
+			Handler:    _NodeServant_GetNodeStat_Handler,
+		},
+		{
+			MethodName: "SyncAllNodeStat",
+			Handler:    _NodeServant_SyncAllNodeStat_Handler,
 		},
 		{
 			MethodName: "ActivateServant",

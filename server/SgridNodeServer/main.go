@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"time"
 
 	"google.golang.org/grpc"
@@ -28,8 +30,52 @@ type NodeServer struct {
 
 func (n *NodeServer) KeepAlive(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	logger.Alive.Info("alive called")
-	command.CenterManager.SyncStat()
+	now := constant.GetCurrentTime()
+	command.CenterManager.SyncStat(now)
 	return &emptypb.Empty{}, nil
+}
+
+func (s *NodeServer) GetNodeStat(ctx context.Context, in *emptypb.Empty) (*protocol.GetNodeStatRsp, error){
+	cwd, _ := os.Getwd()
+	stat_path := filepath.Join(cwd, "stat.json")
+	jsonStr, err := os.ReadFile(stat_path)
+	if err!= nil {
+		logger.App.Errorf("读取stat.json文件失败: %v", err)
+		return &protocol.GetNodeStatRsp{
+			Code: service.CODE_FAIL,
+			Msg: service.MSG_FAIL,
+		}, nil
+	}
+	return &protocol.GetNodeStatRsp{
+		Code: service.CODE_SUCCESS,
+		Msg:  service.MSG_SUCCESS,
+		Data: string(jsonStr),
+	}, nil
+}
+
+func (s *NodeServer) SyncAllNodeStat(ctx context.Context, in *protocol.SyncStatReq) (*protocol.BasicRes, error) {
+	cwd, _ := os.Getwd()
+	stat_remote_path := filepath.Join(cwd, "stat-remote.json")
+	outFile, err := os.OpenFile(stat_remote_path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		logger.App.Errorf("创建文件失败: SyncStat |%v", err)
+		return &protocol.BasicRes{
+			Code: service.CODE_FAIL,
+			Msg: service.MSG_FAIL,
+		}, nil
+	}
+	defer outFile.Close()
+	if _, err := outFile.Write([]byte(in.Data)); err != nil {
+		logger.App.Errorf("文件写入失败: SyncStat | %v", err)
+		return &protocol.BasicRes{
+			Code: service.CODE_FAIL,
+			Msg: service.MSG_FAIL,
+		}, nil
+	}
+	return &protocol.BasicRes{
+		Code: service.CODE_SUCCESS,
+		Msg:  service.MSG_SUCCESS,
+	}, nil
 }
 
 func (s *NodeServer) ActivateServant(ctx context.Context, in *protocol.ActivateReq) (*protocol.BasicRes, error) {
@@ -114,7 +160,9 @@ func init() {
 	}
 	mapper.LoadMapper(ormDb)
 	snsList := command.LoadStatList()
-	command.InitCommands(snsList)
+	if snsList != nil{
+		command.InitCommands(snsList.StatList)
+	}
 }
 
 func main() {
