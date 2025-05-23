@@ -57,6 +57,10 @@ func CheckStat(in *protocol.CheckStatReq) (code int, msg string) {
 				serverInfo.ServerName, v, pid, alive),
 			ServerName: serverInfo.ServerName,
 		})
+		if !alive {
+			mapper.T_Mapper.UpdateNodeStatus(v.Id, constant.COMM_STATUS_OFFLINE)
+			continue
+		}
 		mapper.T_Mapper.UpdateNodeStatus(v.Id, constant.COMM_STATUS_ONLINE)
 	}
 	return CODE_SUCCESS, ""

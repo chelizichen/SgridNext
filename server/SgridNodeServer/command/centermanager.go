@@ -21,3 +21,6 @@ func (cm *centerManager) GetCommand(nodeId int) *Command {
 	return cm.commands[nodeId]
 }
 
+func (cm *centerManager) GetCommands() map[int]*Command {
+	return cm.commands
+}

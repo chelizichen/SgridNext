@@ -109,8 +109,11 @@ func LoadProxy() {
 						// 在线,并且也在节点中
 						_, err := (*ProxyMap.items[node.ID].Proxy).KeepAlive(context.Background(), &emptypb.Empty{})
 						if err != nil {
+							mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_OFFLINE)
 							logger.Alive.Errorf("节点 | %s | 挂了 | %s", node.ID, err.Error())
+							continue
 						}
+						mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_ONLINE)
 					} else {
 						// 在线，不在节点中，可能为新添加的
 						addr := fmt.Sprintf("%s:%s", node.Host, constant.NODE_PORT)
@@ -120,12 +123,14 @@ func LoadProxy() {
 							),
 						)
 						if err != nil {
+							mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_OFFLINE)
 							logger.App.Errorf("创建节点连接失败 | ID:%d | %s", node.ID, err.Error())
 							continue
 						}
 						client := protocol.NewNodeServantClient(conn)
 						ProxyMap.AddProxy(node.ID, &client)
 						logger.Alive.Infof("添加节点成功 | %s ", node.ID)
+						mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_ONLINE)
 					}
 				}
 				if node.NodeStatus == constant.COMM_STATUS_OFFLINE {

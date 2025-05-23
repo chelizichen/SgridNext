@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sgridnext.com/server/SgridNodeServer/api"
+	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/server/SgridNodeServer/service"
 	"sgridnext.com/src/config"
@@ -27,6 +28,7 @@ type NodeServer struct {
 
 func (n *NodeServer) KeepAlive(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	logger.Alive.Info("alive called")
+	command.CenterManager.SyncStat()
 	return &emptypb.Empty{}, nil
 }
 
@@ -111,6 +113,8 @@ func init() {
 		panic(err)
 	}
 	mapper.LoadMapper(ormDb)
+	snsList := command.LoadStatList()
+	command.InitCommands(snsList)
 }
 
 func main() {

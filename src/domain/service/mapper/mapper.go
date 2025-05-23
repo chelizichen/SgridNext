@@ -55,6 +55,15 @@ func (t *T_PatchServer_Mapper) GetNodeInfo(id int) (entity.Node, error) {
 	return node, res.Error
 }
 
+func (t *T_PatchServer_Mapper) UpdateMachineNodeStatus(id int, status int) error {
+	err := t.db.Debug().
+		Model(&entity.Node{}).
+		Where("id = ?", id).
+		Update("node_status", status).
+		Error
+	return err
+}
+
 func (t *T_PatchServer_Mapper) UpdateNodePatch(ids []int, patchId int) error {
 	logger.Mapper.Info("更新服务节点：", ids, patchId)
 	if len(ids) == 0 {

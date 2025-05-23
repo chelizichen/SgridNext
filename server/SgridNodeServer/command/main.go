@@ -18,6 +18,7 @@ type Command struct {
 	serverName string
 	nodeId     int
 	mu         sync.Locker
+	pid    		int
 }
 
 func NewServerCommand(serverName string) *Command {
@@ -27,13 +28,27 @@ func NewServerCommand(serverName string) *Command {
 	}
 }
 
+func NewPidCommand(pid int,serverName string,nodeId int) *Command {
+	os.FindProcess(pid)
+	cmd := &Command{
+		serverName: serverName,
+		mu:         &sync.Mutex{},
+	}
+	cmd.SetPid(pid)
+	cmd.SetNodeId(nodeId)
+	return cmd
+}
+
 func (c *Command) GetCmd() *exec.Cmd {
 	return c.cmd
 }
 
+func (c *Command) SetPid(pid int) {
+	c.pid = pid
+}
+
 func (c *Command) GetPid() int {
-	// return 9999
-	return c.cmd.Process.Pid
+	return c.pid
 }
 
 func (c *Command) SetNodeId(nodeId int) {
@@ -88,6 +103,8 @@ func (c *Command) Start() error {
 	c.cmd.Stderr = outFile
 
 	err = c.cmd.Start()
+	c.SetPid(c.cmd.Process.Pid)
+
 	// 将命令输出重定向到文件
 	if err != nil {
 		logger.CMD.Errorf("failed to start command: %v", err)
@@ -114,10 +131,10 @@ func (c *Command) Stop() error {
 }
 
 func (c *Command) CheckStat() (pid int, alive bool, err error) {
-	if c.cmd == nil || c.cmd.Process == nil {
-		return 0, false, fmt.Errorf("command not initialized")
-	}
-	pid = c.cmd.Process.Pid
+	// if c.cmd == nil || c.cmd.Process == nil {
+	// 	return 0, false, fmt.Errorf("command not initialized")
+	// }
+	pid = c.GetPid()
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		return pid, false, fmt.Errorf("find process failed: %w", err)
