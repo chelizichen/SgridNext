@@ -34,3 +34,6 @@ ContainerTest
 config_test
 
 app
+
+/test/rpcserver/grpc_go_server/SgridTestGrpcGoServer
+/test/rpcserver/grpc_go_client/SgridTestGrpcGoClient

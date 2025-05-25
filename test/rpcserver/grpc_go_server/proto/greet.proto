@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package grpc_go_distributed_test;
+
+// import "google/protobuf/empty.proto";
+
+option go_package = ".;protocol";
+
+
+message SayHelloReq{
+    string name = 1;
+}
+
+message SayHelloRes{
+    string message = 1;
+    int32 code = 2;
+    string data = 3;
+}
+
+// 文件传输服务定义
+service GreetService {
+    // 节点心跳
+    rpc SayHello(SayHelloReq) returns (SayHelloRes) {}
+}
