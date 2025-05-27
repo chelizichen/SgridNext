@@ -27,8 +27,11 @@ type PrxManage[T any] struct {
 }
 
 type Proxy[T any] interface {
+	// 获取服务注册表地址，进行代理链接
 	GetAddrs() []*BaseSvrNodeStat
+	// 客户端实例函数
 	NewClient(conn grpc.ClientConnInterface) T
+	// 服务名称
 	GetServerName() string
 }
 
