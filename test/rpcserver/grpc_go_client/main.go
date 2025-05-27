@@ -9,24 +9,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"sgridnext.com/distributed"
-	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/test/rpcserver/grpc_go_server/proto"
 )
 
 type GreetServicePrx struct{}
 
-func (g *GreetServicePrx) GetAddrs() []*command.BaseSvrNodeStat {
+func (g *GreetServicePrx) GetAddrs() []*distributed.BaseSvrNodeStat {
 	// 从注册中心获取节点列表
 	registry := distributed.Registry{}
-	nodes, err := registry.FindRegistryByServerName("SgridTestGrpcGoServer")
+	nodes, err := registry.FindRegistryByServerName(g.GetServerName())
 	if err != nil {
 		fmt.Println("获取节点列表失败")
 		return nil
 	}
 	// 转换为[]*command.BaseSvrNodeStat
-	addrs := make([]*command.BaseSvrNodeStat, 0)
+	addrs := make([]*distributed.BaseSvrNodeStat, 0)
 	for _, node := range nodes {
-		addr := &command.BaseSvrNodeStat{
+		addr := &distributed.BaseSvrNodeStat{
 			ServerName: node.ServerName,
 			ServerHost: node.ServerHost,
 			ServerPort: node.ServerPort,
@@ -41,6 +40,11 @@ func (g *GreetServicePrx) NewClient(conn grpc.ClientConnInterface) *protocol.Gre
 	client := protocol.NewGreetServiceClient(conn)
 	return &client
 }
+
+func (g *GreetServicePrx)GetServerName() string {
+	return "SgridTestGrpcGoServer"
+}
+
 
 func LoadProxy() *distributed.PrxManage[*protocol.GreetServiceClient] {
 	var prx = &GreetServicePrx{}
@@ -57,7 +61,7 @@ func main() {
 	fmt.Println("SGRID_TARGET_PORT: ", port)
 	if port == "" {
 		fmt.Println("SGRID_TARGET_PORT is empty")
-		port = "10010"
+		port = "12051"
 	}
 	host := os.Getenv("SGRID_TARGET_HOST")
 	fmt.Println("SGRID_TARGET_HOST: ", port)
@@ -82,12 +86,22 @@ func main() {
 	// fmt.Println("rsp: ", rsp.Message)
 
 	engine.GET("/", func(c *gin.Context) {
-		client := *prx.GetClient()
-		rsp, error := client.SayHello(context.Background(), &protocol.SayHelloReq{
+		client,ok := prx.GetClient()
+		if !ok {
+			fmt.Println("获取客户端失败")
+			c.JSON(200, gin.H{
+				"message": "获取客户端失败",
+			})
+			return
+		}
+		rsp, error := (*client).SayHello(context.Background(), &protocol.SayHelloReq{
 			Name: "grpc_go_client",
 		})
 		if error != nil {
 			fmt.Println("调用远程方法失败")
+			c.JSON(200, gin.H{
+				"message": "调用远程方法失败",
+			})
 			return
 		}
 		fmt.Println("调用远程方法成功")

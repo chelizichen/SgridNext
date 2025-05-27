@@ -7,52 +7,65 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"sgridnext.com/server/SgridNodeServer/command"
 )
+type BaseSvrNodeStat struct {
+	ServerName string `json:"server_name,omitempty"` // 服务名称
+	ServerHost string `json:"host,omitempty"`        // 主机地址
+	ServerPort int    `json:"port,omitempty"`        // 主机端口
+}
+
+func (p *BaseSvrNodeStat) String() string {
+	return fmt.Sprintf("%s:%d", p.ServerHost, p.ServerPort)
+}
 
 type PrxManage[T any] struct {
 	svr       string
-	addrs     []*command.BaseSvrNodeStat
-	clients   []*T
+	addrs     []*BaseSvrNodeStat
+	clients   map[string]*T
 	newClient func(conn grpc.ClientConnInterface) T
-	getAddrs  func() []*command.BaseSvrNodeStat
+	getAddrs  func() []*BaseSvrNodeStat
 }
 
 type Proxy[T any] interface {
-	GetAddrs() []*command.BaseSvrNodeStat
+	GetAddrs() []*BaseSvrNodeStat
 	NewClient(conn grpc.ClientConnInterface) T
+	GetServerName() string
 }
 
 func LoadStringToProxy[T any](prx Proxy[T]) (*PrxManage[T], error) {
-	addrs := prx.GetAddrs()
-	if len(addrs) == 0 {
-		panic("no registry found")
-	}
-	first := addrs[0]
 	pm := &PrxManage[T]{
-		addrs:     addrs,
-		svr:       first.ServerName,
+		addrs:     make([]*BaseSvrNodeStat, 0),
+		svr:       prx.GetServerName(),
 		getAddrs:  prx.GetAddrs,
 		newClient: prx.NewClient,
-		clients:   make([]*T, 0),
+		clients:   make(map[string]*T, 0),
 	}
 	pm.syncNodes(true)
 	go pm.syncNodes(false)
 	return pm, nil
 }
 
-func (p *PrxManage[T]) GetClient() T {
+func (p *PrxManage[T]) GetClient() (client T,ok bool){
 	if len(p.clients) == 0 {
-		var zero T
-		return zero
+		return client, false
 	}
-	idx := rand.Intn(len(p.clients))
-	return *p.clients[idx]
+	rand.Seed(time.Now().UnixNano())
+	keys := make([]string, 0, len(p.clients))
+	for k := range p.clients {
+		keys = append(keys, k)
+	}
+	randomKey := keys[rand.Intn(len(keys))]
+	client = *p.clients[randomKey]
+	return client, true
 }
 
 func (p *PrxManage[T]) syncNodes(init bool) {
 	if init {
 		p.addrs = p.getAddrs()
+		if len(p.addrs) == 0 {
+			fmt.Println("初始化同步节点失败 | 节点列表为空")
+			return
+		}
 		err := p.addNodes(p.addrs)
 		if err != nil {
 			fmt.Println("初始化同步节点失败 | ", err.Error())
@@ -72,18 +85,22 @@ func (p *PrxManage[T]) syncNodes(init bool) {
 				if err != nil {
 					fmt.Println("同步新增节点失败 | ", err.Error())
 				}
+				fmt.Println("同步新增节点成功 | ", diffAdd)
 			}
 			if len(diffSub) > 0 {
 				err := p.delNodes(diffSub)
 				if err != nil {
 					fmt.Println("同步删除节点失败 | ", err.Error())
 				}
+				fmt.Println("同步删除节点成功 | ", diffSub)
 			}
+			p.addrs = newAddrs
+			fmt.Println("同步节点成功 | ", p.clients)
 		}
 	}
 }
 
-func (p *PrxManage[T]) addNodes(addrs []*command.BaseSvrNodeStat) error {
+func (p *PrxManage[T]) addNodes(addrs []*BaseSvrNodeStat) error {
 	for _, addr := range addrs {
 		t_addr := fmt.Sprintf("%s:%v", addr.ServerHost, addr.ServerPort)
 		conn, err := grpc.NewClient(t_addr,
@@ -96,21 +113,17 @@ func (p *PrxManage[T]) addNodes(addrs []*command.BaseSvrNodeStat) error {
 			return err
 		}
 		cn := p.newClient(conn)
-		p.clients = append(p.clients, &cn)
+		p.clients[addr.String()] = &cn
 	}
 	return nil
 }
 
-func (p *PrxManage[T]) delNode(addr *command.BaseSvrNodeStat) {
-	for i, client := range p.clients {
-		if client == nil {
-			continue
-		}
-		p.clients[i] = nil
-	}
+func (p *PrxManage[T]) delNode(addr *BaseSvrNodeStat) {
+	p.clients[addr.String()] = nil
+	delete(p.clients, addr.String())
 }
 
-func (p *PrxManage[T]) delNodes(addrs []*command.BaseSvrNodeStat) error {
+func (p *PrxManage[T]) delNodes(addrs []*BaseSvrNodeStat) error {
 	if len(addrs) == 0 {
 		return nil
 	}
@@ -120,8 +133,8 @@ func (p *PrxManage[T]) delNodes(addrs []*command.BaseSvrNodeStat) error {
 	return nil
 }
 
-func getAddrAdded(oldAddrs, newAddrs []*command.BaseSvrNodeStat) []*command.BaseSvrNodeStat {
-	added := []*command.BaseSvrNodeStat{}
+func getAddrAdded(oldAddrs, newAddrs []*BaseSvrNodeStat) []*BaseSvrNodeStat {
+	added := []*BaseSvrNodeStat{}
 	oldMap := make(map[string]struct{})
 	for _, addr := range oldAddrs {
 		key := fmt.Sprintf("%s:%d", addr.ServerHost, addr.ServerPort)
@@ -136,8 +149,8 @@ func getAddrAdded(oldAddrs, newAddrs []*command.BaseSvrNodeStat) []*command.Base
 	return added
 }
 
-func getAddrSubed(oldAddrs, newAddrs []*command.BaseSvrNodeStat) []*command.BaseSvrNodeStat {
-	subed := []*command.BaseSvrNodeStat{}
+func getAddrSubed(oldAddrs, newAddrs []*BaseSvrNodeStat) []*BaseSvrNodeStat {
+	subed := []*BaseSvrNodeStat{}
 	newMap := make(map[string]struct{})
 	for _, addr := range newAddrs {
 		key := fmt.Sprintf("%s:%d", addr.ServerHost, addr.ServerPort)

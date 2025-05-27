@@ -18,11 +18,6 @@ type SvrNodeStat struct {
 	ServerId   int    `json:"server_id,omitempty"`   // 服务ID
 }
 
-type BaseSvrNodeStat struct {
-	ServerName string `json:"server_name,omitempty"` // 服务名称
-	ServerHost string `json:"host,omitempty"`        // 主机地址
-	ServerPort int    `json:"port,omitempty"`        // 主机端口
-}
 
 type SvrNodeStatMap struct {
 	UpdateTime string         `json:"update_time,omitempty"`
