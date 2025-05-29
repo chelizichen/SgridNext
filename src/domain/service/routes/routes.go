@@ -27,6 +27,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/createGroup", handlers.CreateGroup)
 	// 创建机器节点
 	group.POST("/server/createNode", handlers.CreateNode)
+	// 更新机器节点
+	group.POST("/server/updateNode", handlers.UpdateMachineNode)
 	// 部署服务
 	group.POST("/server/deployServer", handlers.DeployServer)
 	// 停止服务
@@ -60,15 +62,19 @@ func LoadRoutes(engine *gin.Engine) {
 	// CGROUP 获取 服务 STATUS
 	group.POST("/server/cgroup/getStatus", handlers.GetStatus)
 	// 获取文件
-	group.POST("/server/getFile",handlers.GetFile)
+	group.POST("/server/getFile", handlers.GetFile)
 	// 获取发布时对应的配置文件列表
-	group.POST("/server/getConfigList",handlers.GetConfigList)
+	group.POST("/server/getConfigList", handlers.GetConfigList)
 	// 登录
 	group.POST("/login", handlers.Login)
 
+	group.POST("/server/scripts/deploy", handlers.DeployScripts)
+	group.POST("/server/downloadFile", handlers.DownloadFile)
+	group.POST("/server/getFileList", handlers.GetFileList)
+	group.POST("/server/getLog", handlers.GetLog)
 	// 前端静态文件
-	cwd,_ := os.Getwd()
-	root := filepath.Join(cwd,"dist")
-	fmt.Println("web root:",root)
+	cwd, _ := os.Getwd()
+	root := filepath.Join(cwd, "dist")
+	fmt.Println("web root:", root)
 	engine.Static("/sgridnext/", root)
 }

@@ -12,7 +12,7 @@ request.interceptors.response.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 export function createServer(data) {
@@ -87,9 +87,6 @@ export function login(data) {
   return request({ url: "/login", data });
 }
 
-
-
-
 // cgroup
 
 export function setCpuLimit(data) {
@@ -104,32 +101,40 @@ export function setMemoryLimit(data) {
   return request({ url: "/server/cgroup/setMemLimit", data });
 }
 
-// {
-//   "data": {
-//       "cpu": {
-//           "usage": 1767523414000,
-//           "usagePerSec": 1767.523414,
-//           "shares": 0,
-//           "throttled": 50249141
-//       },
-//       "memory": {
-//           "usage": 331776,
-//           "limit": 0,
-//           "cache": 4096,
-//           "swapUsage": 0,
-//           "swapLimit": 0,
-//           "oomEvents": 0
-//       },
-//       "io": {
-//           "readBytes": 0,
-//           "writeBytes": 0
-//       },
-//       "pids": {
-//           "current": 5,
-//           "limit": 18446744073709551615
-//       },
-//       "version": "v2",
-//       "time": "2025-05-01T12:27:17.195937734+08:00"
-//   },
-//   "success": true
-// }
+export function updateMachineNodeStatus(data){
+  return request({ url: "/server/updateNode", data });
+}
+
+// downloadFile({
+//     serverId:1,
+//     fileName:"waterfull.log",
+//     type:1,
+//     host:"10.0.12.17"
+// })
+export function downloadFile(data) {
+  return new Promise((resolve, reject) => {
+    request({ url: "/server/downloadFile", data })
+      .then((res) => {
+        // 将res 下载成一个文件
+        const blob = new Blob([res], { type: "application/octet-stream" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        resolve(true);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
+}
+
+export function getFileList(data) {
+  return request({ url: "/server/getFileList", data });
+}
+
+export function getLog(data) {
+  return request({ url: "/server/getLog", data });
+}

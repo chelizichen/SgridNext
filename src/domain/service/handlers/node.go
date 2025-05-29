@@ -52,6 +52,24 @@ func CreateNode(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "创建节点成功", "data": id})
 }
 
+func UpdateMachineNode(ctx *gin.Context){
+	var req struct{
+		Id int `json:"id"`
+		Status int `json:"status"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	err := mapper.T_Mapper.UpdateMachineNodeStatus(req.Id, req.Status)
+	if err != nil{
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新节点失败", "error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新节点成功"})
+}
+
+
 func GetServerNodesStatus(ctx *gin.Context) {
 	var req struct {
 		NodeId       int    `json:"node_id,omitempty"`

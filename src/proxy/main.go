@@ -27,15 +27,17 @@ type T_Proxy struct {
 type T_ProxyMap struct {
 	sync.RWMutex
 	items map[int]*T_Proxy
+	hostMap map[string]int
 }
 
-func (p *T_ProxyMap) AddProxy(nodeId int, proxy *protocol.NodeServantClient) {
+func (p *T_ProxyMap) AddProxy(nodeId int,host string, proxy *protocol.NodeServantClient) {
 	p.Lock()
 	defer p.Unlock()
 	p.items[nodeId] = &T_Proxy{
 		NodeId: nodeId,
 		Proxy:  proxy,
 	}
+	p.hostMap[host] = nodeId
 }
 
 // FullDispatch 全量节点调用
@@ -53,6 +55,22 @@ func (p *T_ProxyMap) FullDispatch(callback func(*protocol.NodeServantClient) err
 		}
 	}
 	return successIDs, failIDs
+}
+
+func (p *T_ProxyMap) GetProxyByHost(host string) *protocol.NodeServantClient {
+	p.RLock()
+	defer p.RUnlock()
+	return p.items[p.hostMap[host]].Proxy
+}
+
+func (p *T_ProxyMap) DispatchByHost(host string, callback func(*protocol.NodeServantClient) error) error {
+	p.RLock()
+	defer p.RUnlock()
+	proxy := p.items[p.hostMap[host]].Proxy
+	if proxy == nil {
+		return fmt.Errorf("no available nodes")
+	}
+	return callback(proxy)
 }
 
 // RandomDispatch 随机节点调用
@@ -91,6 +109,8 @@ var ProxyMap *T_ProxyMap
 func init() {
 	ProxyMap = &T_ProxyMap{
 		items: make(map[int]*T_Proxy),
+		hostMap: make(map[string]int),
+		RWMutex: sync.RWMutex{},
 	}
 }
 
@@ -144,7 +164,7 @@ func LoadProxy() {
 							continue
 						}
 						client := protocol.NewNodeServantClient(conn)
-						ProxyMap.AddProxy(node.ID, &client)
+						ProxyMap.AddProxy(node.ID, node.Host, &client)
 						logger.Alive.Infof("添加节点成功 | %s ", node.ID)
 						mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_ONLINE)
 					}

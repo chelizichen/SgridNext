@@ -46,6 +46,50 @@ message CheckStatReq{
     repeated int32 nodeIds = 2; // cgroup id
 }
 
+message DownloadFileRequest{
+    string fileName = 1;
+    int32 serverId = 2; // 服务ID
+    int32 type = 3; // 1 下载日志文件
+}
+
+message DownloadFileResponse{
+    int32 code = 1;
+    string msg = 2;
+    bytes data = 3;
+    bool isEnd = 4;
+}
+
+message GetFileListReq{
+    int32 serverId = 1; // 节点id
+    int32 type = 2; // 1 日志
+}
+
+message GetFileListResponse{
+    int32 code = 1;
+    string msg = 2;
+    repeated string fileList = 3;
+}
+
+message GetFileListRsp{
+    int32 code = 1;
+    string msg = 2;
+    repeated string fileList = 3;
+}
+
+message GetLogReq{
+    string serverName = 1; // 节点id
+    int32 logType = 2; // 1 head 2 tail
+    string fileName = 3; // 文件名
+    string keyword = 4;
+    int32 len = 5;
+    int32 serverId = 6;
+}
+
+message GetLogRes{
+    int32 code = 1;
+    string msg = 2;
+    repeated string data = 3;    
+}
 
 // 文件传输服务定义
 service NodeServant {
@@ -67,4 +111,10 @@ service NodeServant {
     rpc CgroupLimit(CgroupLimitReq) returns (basicRes) {}
     // 检查状态
     rpc CheckStat(CheckStatReq) returns (basicRes) {}
+    // 下载文件
+    rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
+    // 获取文件列表
+    rpc GetFileList(GetFileListReq) returns (GetFileListResponse){};
+    // 获取日志
+    rpc GetLog(GetLogReq) returns (GetLogRes){};
 }

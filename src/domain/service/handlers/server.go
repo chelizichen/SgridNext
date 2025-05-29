@@ -322,3 +322,37 @@ func GetServerInfo(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": res})
 }
+
+
+func GetLog(ctx *gin.Context){
+	var req struct {
+		ServerName string `json:"serverName"`
+		ServerId int `json:"serverId"`
+		NodeId int `json:"nodeId"`
+		Len int `json:"len"`
+		Keyword string `json:"keyword"`
+		Host string `json:"host"`
+		LogType int `json:"logType"`
+		FileName string `json:"fileName"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err!= nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	proxy.ProxyMap.DispatchByHost(req.Host, func(client *protocol.NodeServantClient) error {
+		rsp, err := (*client).GetLog(context.Background(), &protocol.GetLogReq{
+			ServerName: req.ServerName,
+			ServerId: int32(req.ServerId),
+			Len: int32(req.Len),
+			Keyword: req.Keyword,
+			LogType:int32(req.LogType),
+			FileName: req.FileName,
+		})
+		if err != nil{
+			logger.RPC.Infof("调用失败 | QueryLog | err | %s",err.Error())
+			return err
+		}
+		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": rsp.Data})
+		return nil
+	})
+}

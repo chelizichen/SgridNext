@@ -16,7 +16,7 @@ type GreetServicePrx struct{}
 
 func (g *GreetServicePrx) GetAddrs() []*distributed.BaseSvrNodeStat {
 	// 从注册中心获取节点列表
-	registry := distributed.Registry{}
+	registry := distributed.DefaultRegistry{}
 	nodes, err := registry.FindRegistryByServerName(g.GetServerName())
 	if err != nil {
 		fmt.Println("获取节点列表失败")

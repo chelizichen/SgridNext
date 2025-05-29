@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"sgridnext.com/server/SgridNodeServer/command"
+	"sgridnext.com/src/constant"
 )
 
 type SgridDistributedRegistry interface {
@@ -15,12 +16,13 @@ type SgridDistributedRegistry interface {
 	FindRegistryByServerName(serverName string) ([]*command.SvrNodeStat, error)
 }
 
-type Registry struct{}
+type DefaultRegistry struct{}
 
-func (r *Registry) FindRegistry() ([]*command.SvrNodeStat, error) {
+func (r *DefaultRegistry) FindRegistry() ([]*command.SvrNodeStat, error) {
 	// cwd, _ := os.Getwd()
 	// stat_remote_path := filepath.Join(cwd, "stat-remote.json")
-	stat_remote_path := filepath.Join("/usr/sgridnode", "stat-remote.json")
+	sgrid_node_dir := os.Getenv(constant.SGRID_NODE_DIR)
+	stat_remote_path := filepath.Join(sgrid_node_dir, "stat-remote.json")
 	fmt.Println("FindRegistry >> stat_remote_path: ", stat_remote_path)
 	file, err := os.ReadFile(stat_remote_path)
 	if err != nil {
@@ -36,7 +38,7 @@ func (r *Registry) FindRegistry() ([]*command.SvrNodeStat, error) {
 	return nodeStatMap.StatList, nil
 }
 
-func (r *Registry) FindRegistryByServerName(serverName string) ([]*command.SvrNodeStat, error) {
+func (r *DefaultRegistry) FindRegistryByServerName(serverName string) ([]*command.SvrNodeStat, error) {
 	statList, err := r.FindRegistry()
 	if err != nil {
 		fmt.Println("FindRegistryByServerName >> FindRegistry error: ", err.Error())

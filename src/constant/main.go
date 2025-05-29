@@ -55,4 +55,5 @@ const (
 
 const (
 	NODE_PORT = "25528"
+	SGRID_NODE_DIR = "SGRID_NODE_DIR"
 )

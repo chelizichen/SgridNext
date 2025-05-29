@@ -22,11 +22,13 @@ func CreateBinaryCommand(serverName string, targetFile string) (*Command ,error)
 }
 
 func CreateJavaJarCommand(serverName string, targetDir string) (*Command ,error){
+	logger.CMD.Infof("CreateJavaJarCommand | %s | targetDir %s ",serverName,targetDir)
 	// 通过targetDir 去扫路径下的 jar文件
 	cmd := NewServerCommand(serverName)
 	// 在 目录下寻找 以 .jar 结尾的文件
 	jarFile, err := FindFile(targetDir, ".jar")
 	if err != nil {
+		logger.CMD.Errorf("未找到jar文件: %v", err)
 		return nil, err
 	}
 	if jarFile != "" {
@@ -36,6 +38,7 @@ func CreateJavaJarCommand(serverName string, targetDir string) (*Command ,error)
 	}
 	warFile, err := FindFile(targetDir, ".war")
 	if err!= nil {
+		logger.CMD.Errorf("未找到war文件: %v", err)
 		return nil, err
 	}
 	if warFile != "" {
@@ -48,10 +51,13 @@ func CreateJavaJarCommand(serverName string, targetDir string) (*Command ,error)
 
 func FindFile(targetDir string, suffix string) (string, error) {
 	var foundFile string
+	logger.CMD.Infof("开始在目录下查找文件: %s", targetDir)
 	err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			logger.CMD.Errorf("文件遍历错误: %v", err)
 			return err
 		}
+		logger.CMD.Infof("正在遍历文件: %s", path)
 		if !info.IsDir() && strings.HasSuffix(path, suffix) {
 			foundFile = path
 			return filepath.SkipDir

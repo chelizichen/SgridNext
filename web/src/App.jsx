@@ -4,6 +4,7 @@ import './App.css';
 import Console from './views/console';
 import Control from './views/control';
 import Login from './views/Login';
+import LogView from './views/log/LogView';
 
 const { Header, Content, Footer } = Layout;
 
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/console" element={<Console />} />
             <Route path="/control" element={<Control />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/log" element={<LogView />} />
           </Routes>
         </Content>
         <Footer style={{ textAlign: 'center' }}>

@@ -41,6 +41,12 @@ type NodeServantClient interface {
 	CgroupLimit(ctx context.Context, in *CgroupLimitReq, opts ...grpc.CallOption) (*BasicRes, error)
 	// 检查状态
 	CheckStat(ctx context.Context, in *CheckStatReq, opts ...grpc.CallOption) (*BasicRes, error)
+	// 下载文件
+	DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (NodeServant_DownloadFileClient, error)
+	// 获取文件列表
+	GetFileList(ctx context.Context, in *GetFileListReq, opts ...grpc.CallOption) (*GetFileListResponse, error)
+	// 获取日志
+	GetLog(ctx context.Context, in *GetLogReq, opts ...grpc.CallOption) (*GetLogRes, error)
 }
 
 type nodeServantClient struct {
@@ -132,6 +138,56 @@ func (c *nodeServantClient) CheckStat(ctx context.Context, in *CheckStatReq, opt
 	return out, nil
 }
 
+func (c *nodeServantClient) DownloadFile(ctx context.Context, in *DownloadFileRequest, opts ...grpc.CallOption) (NodeServant_DownloadFileClient, error) {
+	stream, err := c.cc.NewStream(ctx, &NodeServant_ServiceDesc.Streams[0], "/SgridProtocol.NodeServant/DownloadFile", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &nodeServantDownloadFileClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type NodeServant_DownloadFileClient interface {
+	Recv() (*DownloadFileResponse, error)
+	grpc.ClientStream
+}
+
+type nodeServantDownloadFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *nodeServantDownloadFileClient) Recv() (*DownloadFileResponse, error) {
+	m := new(DownloadFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *nodeServantClient) GetFileList(ctx context.Context, in *GetFileListReq, opts ...grpc.CallOption) (*GetFileListResponse, error) {
+	out := new(GetFileListResponse)
+	err := c.cc.Invoke(ctx, "/SgridProtocol.NodeServant/GetFileList", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServantClient) GetLog(ctx context.Context, in *GetLogReq, opts ...grpc.CallOption) (*GetLogRes, error) {
+	out := new(GetLogRes)
+	err := c.cc.Invoke(ctx, "/SgridProtocol.NodeServant/GetLog", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServantServer is the server API for NodeServant service.
 // All implementations must embed UnimplementedNodeServantServer
 // for forward compatibility
@@ -154,6 +210,12 @@ type NodeServantServer interface {
 	CgroupLimit(context.Context, *CgroupLimitReq) (*BasicRes, error)
 	// 检查状态
 	CheckStat(context.Context, *CheckStatReq) (*BasicRes, error)
+	// 下载文件
+	DownloadFile(*DownloadFileRequest, NodeServant_DownloadFileServer) error
+	// 获取文件列表
+	GetFileList(context.Context, *GetFileListReq) (*GetFileListResponse, error)
+	// 获取日志
+	GetLog(context.Context, *GetLogReq) (*GetLogRes, error)
 	mustEmbedUnimplementedNodeServantServer()
 }
 
@@ -187,6 +249,15 @@ func (UnimplementedNodeServantServer) CgroupLimit(context.Context, *CgroupLimitR
 }
 func (UnimplementedNodeServantServer) CheckStat(context.Context, *CheckStatReq) (*BasicRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckStat not implemented")
+}
+func (UnimplementedNodeServantServer) DownloadFile(*DownloadFileRequest, NodeServant_DownloadFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+}
+func (UnimplementedNodeServantServer) GetFileList(context.Context, *GetFileListReq) (*GetFileListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFileList not implemented")
+}
+func (UnimplementedNodeServantServer) GetLog(context.Context, *GetLogReq) (*GetLogRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLog not implemented")
 }
 func (UnimplementedNodeServantServer) mustEmbedUnimplementedNodeServantServer() {}
 
@@ -363,6 +434,63 @@ func _NodeServant_CheckStat_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeServant_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NodeServantServer).DownloadFile(m, &nodeServantDownloadFileServer{stream})
+}
+
+type NodeServant_DownloadFileServer interface {
+	Send(*DownloadFileResponse) error
+	grpc.ServerStream
+}
+
+type nodeServantDownloadFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *nodeServantDownloadFileServer) Send(m *DownloadFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _NodeServant_GetFileList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFileListReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServantServer).GetFileList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/SgridProtocol.NodeServant/GetFileList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServantServer).GetFileList(ctx, req.(*GetFileListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeServant_GetLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLogReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServantServer).GetLog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/SgridProtocol.NodeServant/GetLog",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServantServer).GetLog(ctx, req.(*GetLogReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeServant_ServiceDesc is the grpc.ServiceDesc for NodeServant service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -406,7 +534,21 @@ var NodeServant_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "CheckStat",
 			Handler:    _NodeServant_CheckStat_Handler,
 		},
+		{
+			MethodName: "GetFileList",
+			Handler:    _NodeServant_GetFileList_Handler,
+		},
+		{
+			MethodName: "GetLog",
+			Handler:    _NodeServant_GetLog_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadFile",
+			Handler:       _NodeServant_DownloadFile_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "NodeServer.proto",
 }
