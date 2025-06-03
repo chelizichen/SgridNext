@@ -78,6 +78,15 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 		ServerName: serverInfo.ServerName,
 		ServerId:   serverInfo.ID,
 	})
+	defer func() {
+		if r := recover(); r != nil {
+			mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
+				TYPE:         entity.TYPE_ERROR,
+				Content:      fmt.Sprintf("激活服务失败 %s | 主机节点 %d | 版本号 | %d  | 原因 %s", serverInfo.ServerName, localNodeId, req.PackageId, r),
+			}))
+			logger.Server.Errorf("DeployServer | recover | %v", r)
+		}
+	}()
 	// 遍历 当前节点下的服务节点列表，找出需要激活的节点
 	for _, node := range nodes {
 		if !patchutils.T_PatchUtils.Contains(serverNodeIds, node.Id) {

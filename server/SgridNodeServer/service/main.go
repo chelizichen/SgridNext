@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	MSG_SUCCESS  = "成功部署"
+	MSG_SUCCESS  = "请求成功"
 	CODE_SUCCESS = 0
-	MSG_FAIL     = "部署失败"
+	MSG_FAIL     = "请求失败"
 	CODE_FAIL    = -1
 )
 
