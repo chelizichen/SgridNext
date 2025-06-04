@@ -18,6 +18,15 @@ func CreateNodeCommand(serverName string, targetFile string) (*Command ,error){
 func CreateBinaryCommand(serverName string, targetFile string) (*Command ,error){
 	cmd := NewServerCommand(serverName)
 	err := cmd.SetCommand(targetFile)
+	if err != nil{
+		logger.App.Error("create command error:", err)
+		return nil,err
+	}
+	err = AddPerm(targetFile)
+	if err != nil{
+		logger.App.Error("add perm error:", err)
+		return nil,err
+	}
 	return cmd,err
 }
 

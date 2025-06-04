@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"syscall"
 
 	"sgridnext.com/src/logger"
@@ -33,5 +34,15 @@ func Kill(pid int) error {
 	}
 
 	logger.App.Infof("成功终止进程 %d", pid)
+	return nil
+}
+
+func AddPerm(path string)error{
+    var cmd *exec.Cmd = exec.Command("chmod","+x",path)
+    err := cmd.Run()
+	if err != nil {
+		logger.App.Errorf("添加权限失败: %v", err)
+		return err
+	}
 	return nil
 }
