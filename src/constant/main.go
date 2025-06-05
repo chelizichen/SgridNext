@@ -7,7 +7,7 @@ const (
 	SGRID_SERVANT_DIR = "SGRID_SERVANT_DIR"
 
 	TARGET_LOG_DIR     = "server/SgridPatchServer/log"
-	TAGET_CONF_DIR     = "server/SgridPatchServer/conf"
+	TARGET_CONF_DIR     = "server/SgridPatchServer/conf"
 	TARGET_PACKAGE_DIR = "server/SgridPatchServer/package"
 	TARGET_SERVANT_DIR = "server/SgridPatchServer/servant"
 )

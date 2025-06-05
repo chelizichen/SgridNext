@@ -1,7 +1,6 @@
 package command
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -103,9 +102,10 @@ func (c *Command) SetCommand(cmd string, args ...string) error {
 	logger.CMD.Infof("s.cmd: %s | args: %s \n", cmd, args)
 	cwd, _ := os.Getwd()
 	c.cmd = exec.Command(cmd, args...)
+	c.cmd.Env = append(c.cmd.Env,os.Environ()...)
 	c.cmd.Env = append(c.cmd.Env,
 		fmt.Sprintf("%s=%s", constant.SGRID_LOG_DIR, filepath.Join(cwd, constant.TARGET_LOG_DIR, c.serverName)),
-		fmt.Sprintf("%s=%s", constant.SGRID_CONF_DIR, filepath.Join(cwd, constant.TAGET_CONF_DIR, c.serverName)),
+		fmt.Sprintf("%s=%s", constant.SGRID_CONF_DIR, filepath.Join(cwd, constant.TARGET_CONF_DIR, c.serverName)),
 		fmt.Sprintf("%s=%s", constant.SGRID_PACKAGE_DIR, filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, c.serverName)),
 		fmt.Sprintf("%s=%s", constant.SGRID_SERVANT_DIR, filepath.Join(cwd, constant.TARGET_SERVANT_DIR, c.serverName)),
 		fmt.Sprintf("%s=%s", constant.SGRID_NODE_DIR, cwd),
@@ -158,12 +158,25 @@ func (c *Command) Stop() error {
 		// 进程未启动，直接返回nil
 		return nil
 	}
-	if err := c.cmd.Process.Kill(); err != nil {
-		if errors.Is(err, os.ErrProcessDone) {
-			return nil // 进程已结束
-		}
-		return fmt.Errorf("kill process failed: %w", err)
+	logger.CMD.Infof("正在停止进程: %d", c.GetPid())
+	groups,err := FindProcessGroup(c.GetPid())
+	if err != nil {
+		logger.CMD.Errorf("failed to kill process: %v", err)
+		return err
 	}
+	for _,pid := range groups {
+		logger.CMD.Infof("正在停止进程: %d", pid)
+		if err := Kill(pid); err != nil {
+			logger.CMD.Errorf("failed to kill process: %v", err)
+			return err
+		}
+	}
+	// if err := c.cmd.Process.Kill(); err != nil {
+	// 	if errors.Is(err, os.ErrProcessDone) {
+	// 		return nil // 进程已结束
+	// 	}
+	// 	return fmt.Errorf("kill process failed: %w", err)
+	// }
 	return nil
 }
 

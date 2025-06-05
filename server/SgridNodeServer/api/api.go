@@ -54,7 +54,7 @@ func GetFile(req FileReq) error {
 	case constant.FILE_TYPE_PACKAGE:
 		filePath = filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, serverName, req.FileName)
 	case constant.FILE_TYPE_CONFIG:
-		filePath = filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, req.FileName)
+		filePath = filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, req.FileName)
 	default:
 		logger.App.Errorf("未知的文件类型: %d", req.Type)
 		return fmt.Errorf("未知的文件类型: %d", req.Type)
@@ -135,7 +135,7 @@ func GetConfigList(req GetConfigListReq) error {
 	serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
 	serverName := serverInfo.ServerName
 	// serverName := "SgridTestJavaServer"
-	configDir := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName)
+	configDir := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName)
 	if err = os.MkdirAll(configDir, 0755); err != nil {
 		logger.App.Errorf("创建目录失败: %v", err)
 		return fmt.Errorf("创建目录失败: %v", err)

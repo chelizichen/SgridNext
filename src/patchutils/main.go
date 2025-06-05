@@ -24,7 +24,7 @@ var T_PatchUtils = &pathUtils{}
 func (p *pathUtils) InitDir(serverName string) error {
 	cwd, _ := os.Getwd()
 	dirs := []string{
-		filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName),
+		filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName),
 		filepath.Join(cwd, constant.TARGET_LOG_DIR, serverName),
 		filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, serverName),
 		filepath.Join(cwd, constant.TARGET_SERVANT_DIR, serverName),
@@ -40,14 +40,14 @@ func (p *pathUtils) InitDir(serverName string) error {
 // // 添加配置文件
 // func (p *pathUtils) AddConfigFile(serverName, configName, configContent string) error {
 // 	cwd, _ := os.Getwd()
-// 	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
+// 	configPath := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, configName)
 // 	return os.WriteFile(configPath, []byte(configContent), 0644)
 // }
 
 // 获取配置文件列表
 func (p *pathUtils) GetConfigFileList(serverName string) []string {
 	cwd, _ := os.Getwd()
-	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName)
+	configPath := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName)
 	configList, _ := os.ReadDir(configPath)
 	var configListRsp []string
 	for _, config := range configList {
@@ -59,7 +59,7 @@ func (p *pathUtils) GetConfigFileList(serverName string) []string {
 // 获取配置文件内容
 func (p *pathUtils) GetConfigFileContent(serverName, configName string) (string, error) {
 	cwd, _ := os.Getwd()
-	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
+	configPath := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, configName)
 	configContent, err := os.ReadFile(configPath)
 	logger.Config.Infof("configPath: %s", configPath)
 	if err != nil {
@@ -73,13 +73,13 @@ func (p *pathUtils) GetConfigFileContent(serverName, configName string) (string,
 // 最后更新新的配置文件
 func (p *pathUtils) UpdateConfigFileContent(serverName, configName, configContent string) (string, error) {
 	cwd, _ := os.Getwd()
-	configPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, configName)
+	configPath := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, configName)
 	logger.Config.Infof("configPath: %s", configPath)
 	// 备份配置文件
 	timestamp := time.Now().Unix()
 	ext := filepath.Ext(configName)
 	backupName := configName[:len(configName)-len(ext)] + "_" + fmt.Sprintf("%d", timestamp) + ext
-	backupPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, backupName)
+	backupPath := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, backupName)
 	logger.Config.Infof("backupPath: ", backupPath)
 	err := os.WriteFile(backupPath, []byte(configContent), 0644)
 	if err != nil {
@@ -170,8 +170,8 @@ func (p *pathUtils) Contains(nodes []int, node int) bool {
 // TestServer | sgrid.yml | sgrid_1234567890.yml
 func (p *pathUtils) BackConfigFile(serverName, originConfigName, newConfigName string) error {
 	cwd, _ := os.Getwd()
-	newConfig := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, newConfigName)
-	originPath := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverName, originConfigName)
+	newConfig := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, newConfigName)
+	originPath := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, originConfigName)
 	if _, err := os.Stat(originPath); err == nil {
 		if err := os.Remove(originPath); err != nil {
 			return fmt.Errorf("failed to remove originPath config: %v", err)

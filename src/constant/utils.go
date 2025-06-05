@@ -26,3 +26,17 @@ func ConvertToIntSlice(input []int32) []int {
 func GetCurrentTime() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
+
+
+func DeduplicateInts(slice []int) []int {
+    seen := make(map[int]bool)
+    result := make([]int, 0)
+
+    for _, num := range slice {
+        if !seen[num] { // 如果 map 中没有记录，则加入结果
+            seen[num] = true
+            result = append(result, num)
+        }
+    }
+    return result
+}

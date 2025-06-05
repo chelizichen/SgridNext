@@ -36,7 +36,7 @@ func GetFile(ctx *gin.Context) {
 		file_path = filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, serverInfo.ServerName, req.FileName)
 	}
 	if req.Type == constant.FILE_TYPE_CONFIG {
-		file_path = filepath.Join(cwd, constant.TAGET_CONF_DIR, serverInfo.ServerName, req.FileName)
+		file_path = filepath.Join(cwd, constant.TARGET_CONF_DIR, serverInfo.ServerName, req.FileName)
 	}
 	logger.App.Infof("获取文件 %s", file_path)
 	if _, err := os.Stat(file_path); err != nil {
@@ -62,7 +62,7 @@ func GetConfigList(ctx *gin.Context) {
 		return
 	}
 	cwd, _ := os.Getwd()
-	config_dir := filepath.Join(cwd, constant.TAGET_CONF_DIR, serverInfo.ServerName)
+	config_dir := filepath.Join(cwd, constant.TARGET_CONF_DIR, serverInfo.ServerName)
 	files, err := os.ReadDir(config_dir)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取配置文件列表失败"})

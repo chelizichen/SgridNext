@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"syscall"
 
+	"sgridnext.com/src/constant"
 	"sgridnext.com/src/logger"
 )
 
@@ -45,4 +48,48 @@ func AddPerm(path string)error{
 		return err
 	}
 	return nil
+}
+
+func FindProcessGroup(nodePid int)([]int,error){
+	var rsp []int = make([]int, 0)
+	rsp = append(rsp, nodePid)
+	// 1. 获取进程的 PGID
+	cmd := exec.Command("ps", "-o", "pgid=", "-p", fmt.Sprintf("%d", nodePid))
+	out, err := cmd.Output()
+	if err != nil {
+		logger.CMD.Infof("获取 PGID 失败: %v\n", err)
+		return rsp,err
+	}
+
+	pgid := strings.TrimSpace(string(out))
+	logger.CMD.Infof("Node 进程 (PID=%d) 的 PGID: %s\n", nodePid, pgid)
+
+	// 2. 查找该 PGID 下的所有进程
+	cmd = exec.Command("ps", "-o", "pid=", "-g", pgid)
+	out, err = cmd.Output()
+	if err != nil {
+		logger.CMD.Infof("查找进程组失败: %v\n", err)
+		return rsp,err
+	}
+
+	pids := strings.Split(strings.TrimSpace(string(out)), "\n")
+	sgridnodePid := os.Getpid()
+	logger.CMD.Infof("sgridnodePid %s 进程 PID :\n", sgridnodePid)
+	logger.CMD.Infof("进程组 %s 下的所有进程:\n", pgid)
+	for _, pid := range pids {
+		logger.CMD.Infof("- PID: %s\n", strings.TrimSpace(pid))
+		cpid,err := strconv.Atoi(strings.TrimSpace(pid))
+		if err !=nil{
+			logger.CMD.Infof("PID 转换失败: %v\n", err)
+		}
+		if cpid == sgridnodePid {
+			logger.CMD.Infof("忽略 节点PID: %s\n", cpid)
+			continue
+		}
+		rsp = append(rsp, cpid)
+	}
+	rsp = constant.DeduplicateInts(rsp)
+	logger.CMD.Infof("进程组 %s 下的进程数: %d\n", pgid, len(rsp))
+	logger.CMD.Infof("进程组 %s 下的进程ID: %v\n", pgid, rsp)
+	return rsp,nil
 }
