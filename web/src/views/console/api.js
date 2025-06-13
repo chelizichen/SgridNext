@@ -138,3 +138,10 @@ export function getFileList(data) {
 export function getLog(data) {
   return request({ url: "/server/getLog", data });
 }
+
+export function getSyncStatus(data){
+  return request({ 
+    url: "/server/getSyncStatus",
+    data 
+  });
+}

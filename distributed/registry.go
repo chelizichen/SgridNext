@@ -38,6 +38,23 @@ func (r *DefaultRegistry) FindRegistry() ([]*command.SvrNodeStat, error) {
 	return nodeStatMap.StatList, nil
 }
 
+func (r *DefaultRegistry) FindRegistryWithPath(p string) (*command.SvrNodeStatMap, error) { 
+	stat_remote_path := p
+	fmt.Println("FindRegistry >> stat_remote_path: ", stat_remote_path)
+	file, err := os.ReadFile(stat_remote_path)
+	if err != nil {
+		return nil, err
+	}
+	var nodeStatMap *command.SvrNodeStatMap
+	err = json.Unmarshal(file, &nodeStatMap)
+	if err != nil {
+		fmt.Println("FindRegistry >> json.Unmarshal error: ", err.Error())
+		return nil, err
+	}
+	fmt.Printf("FindRegistry | Content | %s \n", string(file))
+	return nodeStatMap, nil
+}
+
 func (r *DefaultRegistry) FindRegistryByServerName(serverName string) ([]*command.SvrNodeStat, error) {
 	statList, err := r.FindRegistry()
 	if err != nil {

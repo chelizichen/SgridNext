@@ -55,9 +55,9 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/getNodeLoadDetail", handlers.GetNodeLoadDetail)
 	// 获取服务组列表
 	group.POST("/server/getGroupList", handlers.GetGroupList)
-	// CGROUP 设置 服务 LIMIt CPU
+	// CGROUP 设置 服务 LIMIT CPU
 	group.POST("/server/cgroup/setCpuLimit", handlers.SetCpuLimit)
-	// CGROUP 设置 服务 LIMIt MEM
+	// CGROUP 设置 服务 LIMIT MEM
 	group.POST("/server/cgroup/setMemLimit", handlers.SetMemoryLimit)
 	// CGROUP 获取 服务 STATUS
 	group.POST("/server/cgroup/getStatus", handlers.GetStatus)
@@ -65,6 +65,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/getFile", handlers.GetFile)
 	// 获取发布时对应的配置文件列表
 	group.POST("/server/getConfigList", handlers.GetConfigList)
+	// 获取同步的节点状态 0代表主控
+	group.POST("/server/getSyncStatus", handlers.GetSyncStatus)
 	// 登录
 	group.POST("/login", handlers.Login)
 

@@ -2,13 +2,20 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"sgridnext.com/distributed"
+	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/domain/service/entity"
 	"sgridnext.com/src/domain/service/mapper"
+	"sgridnext.com/src/logger"
 	"sgridnext.com/src/proxy"
 )
 
@@ -117,4 +124,48 @@ func CheckServerNodesStatus(ctx *gin.Context) {
 		return err
 	})
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "已检查完成"})
+}
+
+// 获取机器上同步的节点状态
+func GetSyncStatus(ctx *gin.Context) { 
+	var req struct {
+		NodeId  int `json:"nodeId"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	if req.NodeId == 0{
+		var registry  = distributed.DefaultRegistry{}
+		cwd,_ := os.Getwd()
+		var stat_remote_path = filepath.Join(cwd, "stat-remote.json")
+		data,err  := registry.FindRegistryWithPath(stat_remote_path)
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": data})
+		return 
+	}else{
+		host,err := mapper.T_Mapper.GetHost(req.NodeId)
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": err.Error()})
+			return
+		}
+		proxy.ProxyMap.DispatchByHost(host, func(client *protocol.NodeServantClient) error { 
+			nodeStatData,err  := (*client).GetNodeStat(context.Background(), &emptypb.Empty{})
+			if err != nil{
+				logger.Alive.Errorf("节点 | %s | 获取状态异常 | %s", req.NodeId, err.Error())
+			}
+			var svrNodeMap *command.SvrNodeStatMap
+			err = json.Unmarshal([]byte(nodeStatData.Data),&svrNodeMap)
+			if err != nil{
+				logger.Alive.Errorf("节点 | %s | 获取状态异常 —— JSON 序列化异常 |%s", req.NodeId, err.Error())
+			}
+			ctx.JSON(http.StatusOK, gin.H{"success": true,"data": svrNodeMap})
+			return nil
+		})
+		return 
+	}
+
 }

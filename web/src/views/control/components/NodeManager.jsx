@@ -1,31 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Space, Button } from 'antd';
+import { getNodeList } from '../../console/api';
+import { useNavigate } from 'react-router-dom';
 
 export default function NodeManager() {
   const [nodes, setNodes] = useState([]);
-
+  const navigate = useNavigate();
   const columns = [
     {
       title: '节点ID',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'ID',
+      key: 'ID',
     },
     {
       title: '主机地址',
-      dataIndex: 'host',
-      key: 'host',
+      dataIndex: 'Host',
+      key: 'Host',
     },
     {
-      title: '端口',
-      dataIndex: 'port',
-      key: 'port',
+      title: '操作系统',
+      dataIndex: 'Os',
+      key: 'Os',
+    },
+    {
+      title: '处理器核心数(CORE)',
+      dataIndex: 'Cpus',
+      key: 'Cpus',
+    },
+    {
+      title: '内存大小(G)',
+      dataIndex: 'Memory',
+      key: 'Memory',
     },
     {
       title: '状态',
-      key: 'status',
+      key: 'NodeStatus',
       render: (_, record) => (
-        <Tag color={record.status === 'online' ? 'green' : 'red'}>
-          {record.status}
+        <Tag color={record.NodeStatus === 1 ? 'green' : 'red'}>
+          {record.NodeStatus === 1 ? '在线' : '离线'}
         </Tag>
       ),
     },
@@ -34,27 +46,31 @@ export default function NodeManager() {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link">详情</Button>
-          <Button danger type="link">下线</Button>
+          <Button>详情</Button>
+          <Button onClick={() => navigate(`/control/nodestat_list?id=${record.ID}`)}>节点服务</Button>
+          {
+            record.NodeStatus === 1 ? (
+              <Button danger>下线</Button>
+            ) : (
+              <Button>上线</Button>
+            )
+          }
         </Space>
       ),
     },
   ];
 
   useEffect(() => {
-    // TODO: 对接后端节点状态接口
-    const mockData = [
-      { id: 'node-001', host: '192.168.1.101', port: 8080, status: 'online' },
-      { id: 'node-002', host: '192.168.1.102', port: 8081, status: 'offline' },
-    ];
-    setNodes(mockData);
+    getNodeList().then((res) => {
+      setNodes(res.data);
+    });
   }, []);
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <Button type="primary">新增节点</Button>
-      </div>
+      {/* <div style={{ marginBottom: 16 }}> */}
+        {/* <Button type="primary">新增节点</Button> */}
+      {/* </div> */}
       <Table 
         columns={columns} 
         dataSource={nodes} 

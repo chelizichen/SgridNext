@@ -1,10 +1,14 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Outlet } from 'react-router-dom';
 import { Layout, Menu } from 'antd';
 import './App.css';
 import Console from './views/console';
 import Control from './views/control';
 import Login from './views/Login';
 import LogView from './views/log/LogView';
+import NodeManager from './views/control/components/NodeManager';
+import ServerList from './views/control/components/ServerList';
+import ConfigList from './views/control/components/ConfigList';
+import NodeStat from './views/control/components/NodeStat';
 
 const { Header, Content, Footer } = Layout;
 
@@ -37,7 +41,12 @@ export default function App() {
         <Content>
           <Routes>
             <Route path="/console" element={<Console />} />
-            <Route path="/control" element={<Control />} />
+            <Route path="/control" element={<Control />} >
+              <Route path="server_list" element={<ServerList />} />
+              <Route path="machine_list" element={<NodeManager />} />
+              <Route path="config_list" element={<ConfigList />} />
+              <Route path="nodestat_list" element={<NodeStat />} />
+            </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/log" element={<LogView />} />
           </Routes>

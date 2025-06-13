@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -178,6 +180,7 @@ func LoadProxy() {
 					}
 				}
 			}
+			jsonStr,err  := json.Marshal(NodesStatMap)
 			for _, node := range nodes{
 				if node.NodeStatus != constant.COMM_STATUS_ONLINE {
 					continue
@@ -185,7 +188,6 @@ func LoadProxy() {
 				if !patchutils.T_PatchUtils.Contains(ProxyMap.GetNodes(), node.ID) {
 					continue
 				}
-				jsonStr,err  := json.Marshal(NodesStatMap)
 				if err != nil {
 					logger.Alive.Errorf("全量节点同步失败 | 序列化 ｜ %s",err.Error())
 					continue
@@ -198,6 +200,19 @@ func LoadProxy() {
 					continue
 				}
 				logger.Alive.Infof("全量同步成功 | %v",syncRsp)
+			}
+			logger.Alive.Info("全量同步完成,开始同步到本地节点")
+			// 本地备份节点状态
+			cwd, _ := os.Getwd()
+			stat_remote_path := filepath.Join(cwd, "stat-remote.json")
+			logger.Alive.Infof("开始同步到本地节点路径 ｜ %s",stat_remote_path)
+			outFile, err := os.OpenFile(stat_remote_path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				logger.App.Errorf("创建文件失败: SyncStat |%v", err)
+			}
+			defer outFile.Close()
+			if _, err := outFile.Write([]byte(jsonStr)); err != nil {
+				logger.App.Errorf("文件写入失败: SyncStat | %v", err)
 			}
 		}
 	}()
