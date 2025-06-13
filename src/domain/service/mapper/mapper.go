@@ -148,6 +148,7 @@ func (t *T_PatchServer_Mapper) GetServerInfo(id int) (entity.Server, error) {
 	return server, res.Error
 }
 
+
 type ServerNodesVo struct {
 	Id               int     `json:"id"`
 	Host             string  `json:"host"`
@@ -157,6 +158,9 @@ type ServerNodesVo struct {
 	ServerNodeStatus int     `json:"server_node_status"`
 	CpuLimit         float64 `json:"cpu_limit"`
 	MemoryLimit      int     `json:"memory_limit"`
+	ServerRunType    int     `json:"server_run_type"`
+	AdditionalArgs   string  `json:"additional_args"`
+	ServerId 		 int     `json:"server_id"`
 }
 
 func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]ServerNodesVo, error) {
@@ -165,12 +169,12 @@ func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]Serve
 	where := " where 1 = 1"
 
 	if serverId > 0 {
-		where += " and server_nodes.server_id = ?"
+		where += " and server_nodes.server_id = ? "
 		params = append(params, serverId)
 	}
 
 	if nodeId > 0 {
-		where += " and server_nodes.node_id =?"
+		where += " and server_nodes.node_id = ? "
 		params = append(params, nodeId)
 	}
 
@@ -181,6 +185,9 @@ func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]Serve
 		server_nodes.patch_id as patch_id,
 		server_nodes.create_time as node_create_time,
 		server_nodes.server_node_status as server_node_status,
+		server_nodes.server_run_type as server_run_type,
+		server_nodes.additional_args as additional_args,
+		server_nodes.server_id as server_id,
 		nodes.host as host,
 		server_node_limits.cpu_limit as cpu_limit,
 		server_node_limits.memory_limit as memory_limit

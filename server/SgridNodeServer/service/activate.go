@@ -118,23 +118,18 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 			BindPort:   node.Port,
 			BindHost:   node.Host,
 			NodeId:     node.Id,
+			AdditionalArgs: node.AdditionalArgs,
+			ServerRunType: node.ServerRunType,
+			ServerId: serverId,
 		}
 		logger.Server.Infof("DeployServer | patchServerInfo | %v", patchServerInfo)
 		cmd, err := patchServerInfo.CreateCommand()
-		cmd.SetHost(node.Host)
-		cmd.SetPort(node.Port)
-		cmd.SetLocalMachineId(localNodeId)
-		cmd.SetServerId(serverId)
 		if err != nil {
 			logger.Server.Infof("DeployServer | err | %v", err)
 			// ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "创建服务器命令失败", "error": err.Error()})
 			return CODE_FAIL, err.Error()
 		}
 		args := cmd.GetCmd().Args
-		cmd.AppendEnv([]string{
-			fmt.Sprintf("%s=%s", constant.SGRID_TARGET_HOST, node.Host),
-			fmt.Sprintf("%s=%v", constant.SGRID_TARGET_PORT, node.Port),
-		})
 		logger.Server.Infof("DeployServer | args | %v", args)
 		err = cmd.Start()
 		command.CenterManager.AddCommand(node.Id, cmd)

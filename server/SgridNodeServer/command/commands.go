@@ -9,20 +9,20 @@ import (
 	"sgridnext.com/src/logger"
 )
 
-func CreateNodeCommand(serverName string, targetFile string) (*Command ,error){
-	cmd := NewServerCommand(serverName)
-	err := cmd.SetCommand("node", targetFile)
+func CreateNodeCommand(s *ServerInfo) (*Command ,error){
+	cmd := NewServerCommand(s.ServerName)
+	err := cmd.SetCommand("node", s.TargetFile)
 	return cmd,err
 }
 
-func CreateBinaryCommand(serverName string, targetFile string) (*Command ,error){
-	cmd := NewServerCommand(serverName)
-	err := cmd.SetCommand(targetFile)
+func CreateBinaryCommand(s *ServerInfo) (*Command ,error){
+	cmd := NewServerCommand(s.ServerName)
+	err := cmd.SetCommand(s.TargetFile)
 	if err != nil{
 		logger.App.Error("create command error:", err)
 		return nil,err
 	}
-	err = AddPerm(targetFile)
+	err = AddPerm(s.TargetFile)
 	if err != nil{
 		logger.App.Error("add perm error:", err)
 		return nil,err
@@ -30,7 +30,9 @@ func CreateBinaryCommand(serverName string, targetFile string) (*Command ,error)
 	return cmd,err
 }
 
-func CreateJavaJarCommand(serverName string, targetDir string) (*Command ,error){
+func CreateJavaJarCommand(s *ServerInfo) (*Command ,error){
+	serverName := s.ServerName
+	targetDir := s.TargetFile
 	logger.CMD.Infof("CreateJavaJarCommand | %s | targetDir %s ",serverName,targetDir)
 	// 通过targetDir 去扫路径下的 jar文件
 	cmd := NewServerCommand(serverName)

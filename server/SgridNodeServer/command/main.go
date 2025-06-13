@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -22,6 +23,8 @@ type Command struct {
 	port int
 	localMachineId int
 	serverId int
+	additionalArgs string
+	serverRunType int
 }
 
 
@@ -98,11 +101,30 @@ func (c *Command) GetServerName() string {
 	return c.serverName
 }
 
+func (c *Command) GetAdditionalArgs() string {
+	return c.additionalArgs
+}
+
+
+func (c *Command) SetAdditionalArgs(additionalArgs string) {
+	c.additionalArgs = additionalArgs
+}
+
+func (c *Command) GetRunServerType() int {
+	return c.serverRunType
+}
+
+func (c *Command) SetRunServerType(t int)  {
+	 c.serverRunType = t
+}
+
 func (c *Command) SetCommand(cmd string, args ...string) error {
 	logger.CMD.Infof("s.cmd: %s | args: %s \n", cmd, args)
 	cwd, _ := os.Getwd()
 	c.cmd = exec.Command(cmd, args...)
 	c.cmd.Env = append(c.cmd.Env,os.Environ()...)
+	logger.CMD.Info("debug >> c.host %s| c.port %d",c.host,c.port)
+	// 初始化环境变量
 	c.cmd.Env = append(c.cmd.Env,
 		fmt.Sprintf("%s=%s", constant.SGRID_LOG_DIR, filepath.Join(cwd, constant.TARGET_LOG_DIR, c.serverName)),
 		fmt.Sprintf("%s=%s", constant.SGRID_CONF_DIR, filepath.Join(cwd, constant.TARGET_CONF_DIR, c.serverName)),
@@ -121,6 +143,18 @@ func (c *Command) AppendEnv(kvarr []string) {
 }
 
 func (c *Command) Start() error {
+	if c.additionalArgs != "" {
+		var additionalArgs []string
+		err := json.Unmarshal([]byte(c.additionalArgs), &additionalArgs)
+		if err != nil {
+			return err
+		}
+		c.AppendEnv(additionalArgs)
+	}
+	c.AppendEnv([]string{
+		fmt.Sprintf("%s=%s", constant.SGRID_TARGET_HOST, c.host),
+		fmt.Sprintf("%s=%v", constant.SGRID_TARGET_PORT, c.port),
+	})
 	if c.cmd == nil {
 		return fmt.Errorf("command not initialized")
 	}

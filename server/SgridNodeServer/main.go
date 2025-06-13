@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
+	"sgridnext.com/server/SgridNodeServer/schedule"
 	"sgridnext.com/server/SgridNodeServer/service"
 	"sgridnext.com/src/config"
 	"sgridnext.com/src/constant"
@@ -32,6 +33,7 @@ func init() {
 	if snsList != nil{
 		command.InitCommands(snsList.StatList)
 	}
+	schedule.LoadTick()
 }
 
 func main() {
