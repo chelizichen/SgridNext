@@ -126,7 +126,7 @@ export default function Console() {
   const ServerNodesColumns = [
     { title: "主机地址", dataIndex: "host", key: "host",render:(text,record)=>{
         return (
-          <div onClick={()=>toLogPage(record,serverInfo.server_name,serverInfo.server_id)}>
+          <div style={{"cursor":"pointer",color:"#1677ff"}} onClick={()=>toLogPage(record,serverInfo.server_name,serverInfo.server_id)}>
             {record.host}
           </div>
         )
@@ -147,7 +147,17 @@ export default function Console() {
         return <span style={{ color: "black" }}>已删除</span>;
       },
     },
-    { title: "版本号", key: "patch_id", dataIndex: "patch_id" },
+    { title: "版本号", key: "patch_id", dataIndex: "patch_id",render:(text,record)=>toViewPage(record) },
+    { title: "运行类型", key: "server_run_type", dataIndex: "server_run_type",  
+      render: (text, record) => {
+        if(record.server_run_type === 0){
+          return "手动重启"
+        }
+        if(record.server_run_type === 12){
+          return "自动重启"
+        }
+      } 
+    },
     {
       title: "节点资源限制",
       key: "id",
@@ -168,7 +178,14 @@ export default function Console() {
 
   function toLogPage(record,serverName,serverId){
     let new_path = `/log?host=${record.host}&serverId=${serverId}&serverName=${serverName}&nodeId=${record.id}`
-    nagivate(new_path)
+    let newPath = location.pathname + "/#" + new_path
+    window.open(newPath,"_blank")
+  }
+
+  function toViewPage(record){
+    return (
+      <div  style={{"cursor":"pointer",color:"#1677ff"}} onClick={()=>window.open(record.view_page,"_blank")}>{record.patch_id}</div>
+    )
   }
 
   
@@ -509,6 +526,7 @@ export default function Console() {
               columns={NodeColumns}
               scroll={isMobile ? { x: "max-content" } : undefined}
               pagination={isMobile ? { pageSize: 5 } : undefined}
+              style={{"overflowX": "scroll"}}
             ></Table>
           </Card>
         </Col>

@@ -29,6 +29,7 @@ type ServerNode struct {
 	CreateTime       string `gorm:"column:create_time;type:varchar(64)"`
 	ServerRunType	 int 	`gorm:"column:server_run_type"` // 12 挂掉后自动重启
 	AdditionalArgs   string `gorm:"column:additional_args;type:text"`	// 额外参数
+	ViewPage 		 string `gorm:"column:view_page;type:text"`
 }
 
 type Node struct {

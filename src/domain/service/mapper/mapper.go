@@ -92,6 +92,7 @@ func (t *T_PatchServer_Mapper) UpdateServerNode(node entity.ServerNode)error{
 		Where("id = ?", node.ID).
 		Update("additional_args",node.AdditionalArgs).
 		Update("server_run_type",node.ServerRunType).
+		Update("view_page",node.ViewPage).
 		Error
 	return err
 }
@@ -171,6 +172,7 @@ type ServerNodesVo struct {
 	ServerRunType    int     `json:"server_run_type"`
 	AdditionalArgs   string  `json:"additional_args"`
 	ServerId 		 int     `json:"server_id"`
+	ViewPage 		 string  `json:"view_page"`
 }
 
 func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]ServerNodesVo, error) {
@@ -198,6 +200,7 @@ func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]Serve
 		server_nodes.server_run_type as server_run_type,
 		server_nodes.additional_args as additional_args,
 		server_nodes.server_id as server_id,
+		server_nodes.view_page as view_page,
 		nodes.host as host,
 		server_node_limits.cpu_limit as cpu_limit,
 		server_node_limits.memory_limit as memory_limit

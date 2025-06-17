@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -12,11 +13,19 @@ import (
 var DB *gorm.DB
 
 // InitDB 初始化数据库连接
-func InitDB(dsn string) (*gorm.DB, error) {
+func InitDB(dsn string,dbtype string) (*gorm.DB, error) {
 	var err error
-	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect database: %v", err)
+	if dbtype == "mysql" || dbtype == ""{
+		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect database: %v", err)
+		}
+	}
+	if dbtype == "postgres"{
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect database: %v", err)
+		}
 	}
 
 	sqlDB, err := DB.DB()

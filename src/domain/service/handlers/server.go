@@ -295,6 +295,7 @@ func UpdateServerNode(ctx *gin.Context){
 		Ids         []int    `json:"ids"`
 		ServerRunType  int    `json:"server_run_type"`
 		AdditionalArgs string `json:"additional_args"`
+		ViewPage       string `json:"view_page"`
 
  }
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -306,6 +307,7 @@ func UpdateServerNode(ctx *gin.Context){
 			ID: id,
 			ServerRunType: req.ServerRunType,
 			AdditionalArgs: req.AdditionalArgs,
+			ViewPage: req.ViewPage,
 		})
 		if err != nil {
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新失败"})

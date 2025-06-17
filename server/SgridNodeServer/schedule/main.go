@@ -27,6 +27,10 @@ func runRestartTick() {
 				continue
 			}
 			statList := command.LoadStatList()
+			if statList == nil {
+				// 首次启动没有 stat.json 忽略
+				continue
+			}
 			currOnlineNodeIds := make([]int, 0)
 			for _,v := range statList.StatList{
                 currOnlineNodeIds = append(currOnlineNodeIds,v.NodeId )

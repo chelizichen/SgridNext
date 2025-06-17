@@ -13,7 +13,7 @@ import (
 
 func main() {
 	conf := config.LoadConfig("./config.json")
-	ormDb,err := db.InitDB(conf.Get("db"))
+	ormDb,err := db.InitDB(conf.Get("db"),conf.Get("dbtype"))
 	if err != nil {
 		panic(err)
 	}

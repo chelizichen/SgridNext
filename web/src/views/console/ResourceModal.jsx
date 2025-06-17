@@ -26,8 +26,9 @@ export default function ResourceModal({ visible, onOk, onCancel, form, nodes,ser
                             const args = JSON.stringify(values.additional_args.split(";").filter(v=>v))
                             await updateServerNode({
                                 ids: nodes.map(node => node.id),
-                                server_run_type: values.server_run_type,
-                                additional_args: args,
+                                view_page       : values.view_page,
+                                additional_args : args,
+                                server_run_type : values.server_run_type,
                             })
                             message.success('修改成功')
                             onOk(values);
@@ -62,13 +63,6 @@ export default function ResourceModal({ visible, onOk, onCancel, form, nodes,ser
                     >
                         <InputNumber min={0.1} max={32} style={{ width: '100%' }} />
                     </Form.Item>
-                    <Form.Item
-                        name="additional_args"
-                        label="参数"
-                        rules={[{ required: true, message: '请输入CPU核数' }]}
-                    >
-                        <Input.TextArea style={{width:'100%'}} rows={3}/>
-                    </Form.Item>
                     <Form.Item 
                         name="server_run_type" 
                         label="运行类型" 
@@ -80,6 +74,18 @@ export default function ResourceModal({ visible, onOk, onCancel, form, nodes,ser
                                 { label: '自动重启', value: 12 },
                             ]}
                         />
+                    </Form.Item>
+                    <Form.Item
+                        name="additional_args"
+                        label="参数"
+                    >
+                        <Input.TextArea style={{width:'100%'}} rows={3}/>
+                    </Form.Item>
+                    <Form.Item
+                     name="view_page"
+                     label="预览地址"
+                    >
+                        <Input />
                     </Form.Item>
                 </Form>
             </Modal>
