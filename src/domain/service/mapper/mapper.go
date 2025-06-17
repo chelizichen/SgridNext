@@ -86,6 +86,16 @@ func (t *T_PatchServer_Mapper) UpdateNodeStatus(id int, status int) error {
 	return err
 }
 
+func (t *T_PatchServer_Mapper) UpdateServerNode(node entity.ServerNode)error{
+	err := t.db.Debug().
+		Model(&entity.ServerNode{}).
+		Where("id = ?", node.ID).
+		Update("additional_args",node.AdditionalArgs).
+		Update("server_run_type",node.ServerRunType).
+		Error
+	return err
+}
+
 // 如果有同名的组名，返回错误
 func (t *T_PatchServer_Mapper) CreateGroup(req *entity.ServerGroup) (int, error) {
 	logger.Mapper.Info("创建服务组：", req)

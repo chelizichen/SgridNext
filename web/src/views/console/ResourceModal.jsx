@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, InputNumber, List, message } from 'antd';
-import { setCpuLimit, setMemoryLimit } from './api';
+import { Modal, Form, InputNumber, List, message, Input,Select } from 'antd';
+import { setCpuLimit, setMemoryLimit, updateServerNode } from './api';
 export default function ResourceModal({ visible, onOk, onCancel, form, nodes,serverId }) {
     const [messageApi, contextHolder] = message.useMessage();
     return (
@@ -11,17 +11,25 @@ export default function ResourceModal({ visible, onOk, onCancel, form, nodes,ser
                 open={visible}
                 onOk={() => {
                     form.validateFields()
-                        .then(values => {
-                            setCpuLimit({
+                        .then(async values => {
+                            await setCpuLimit({
                                 cpuLimit: values.cpu,
                                 nodeIds: nodes.map(node => node.id),
                                 serverId,
                             });
-                            setMemoryLimit({
+                            await setMemoryLimit({
                                 memoryLimit: values.memory,
                                 nodeIds: nodes.map(node => node.id),
                                 serverId,
                             });
+                            
+                            const args = JSON.stringify(values.additional_args.split(";").filter(v=>v))
+                            await updateServerNode({
+                                ids: nodes.map(node => node.id),
+                                server_run_type: values.server_run_type,
+                                additional_args: args,
+                            })
+                            message.success('修改成功')
                             onOk(values);
                         })
                         .catch(info => {
@@ -53,6 +61,25 @@ export default function ResourceModal({ visible, onOk, onCancel, form, nodes,ser
                         rules={[{ required: true, message: '请输入CPU核数' }]}
                     >
                         <InputNumber min={0.1} max={32} style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Form.Item
+                        name="additional_args"
+                        label="参数"
+                        rules={[{ required: true, message: '请输入CPU核数' }]}
+                    >
+                        <Input.TextArea style={{width:'100%'}} rows={3}/>
+                    </Form.Item>
+                    <Form.Item 
+                        name="server_run_type" 
+                        label="运行类型" 
+                        rules={[{ required: true, message: '请选择运行类型' }]}
+                    > 
+                        <Select style={{width:'100%'}} placeholder="请选择运行类型"
+                            options={[
+                                { label: '手动重启', value: 0 },
+                                { label: '自动重启', value: 12 },
+                            ]}
+                        />
                     </Form.Item>
                 </Form>
             </Modal>

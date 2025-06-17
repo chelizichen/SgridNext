@@ -23,6 +23,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/getConfigContent", handlers.GetConfigContent)
 	// 创建服务部署节点
 	group.POST("/server/createServerNode", handlers.CreateServerNode)
+	// 更新节点
+	group.POST("/server/updateServerNode", handlers.UpdateServerNode)
 	// 创建服务组
 	group.POST("/server/createGroup", handlers.CreateGroup)
 	// 创建机器节点

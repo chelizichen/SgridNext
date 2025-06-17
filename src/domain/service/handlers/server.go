@@ -289,6 +289,32 @@ func GetServerNodes(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": res})
 }
 
+
+func UpdateServerNode(ctx *gin.Context){
+	var req struct {
+		Ids         []int    `json:"ids"`
+		ServerRunType  int    `json:"server_run_type"`
+		AdditionalArgs string `json:"additional_args"`
+
+ }
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	for _, id := range req.Ids {
+		err := mapper.T_Mapper.UpdateServerNode(entity.ServerNode{
+			ID: id,
+			ServerRunType: req.ServerRunType,
+			AdditionalArgs: req.AdditionalArgs,
+		})
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新失败"})
+			return 
+		}
+	}
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新成功"})
+}
+
 func GetServerList(ctx *gin.Context) {
 	servers, err := mapper.T_Mapper.GetServerListWithGroup()
 	if err != nil {

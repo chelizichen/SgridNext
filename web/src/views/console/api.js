@@ -27,6 +27,11 @@ export function upsertConfig(data) {
 export function createServerNode(data) {
   return request({ url: "/server/createServerNode", data });
 }
+
+export function updateServerNode(data) {
+  return request({ url: "/server/updateServerNode", data });
+}
+
 export function createGroup(data) {
   return request({ url: "/server/createGroup", data });
 }
