@@ -1,5 +1,6 @@
 {
-    "db":"root:lzy20211121@tcp(124.220.19.199:13306)/sgrid_next?charset=utf8&parseTime=true",
-    "nodeIndex":"1",
-    "mainNode":"http://10.0.12.17:15872"
+  "db": "root:lzy20211121@tcp(124.220.19.199:13306)/sgrid_next?charset=utf8&parseTime=true",
+  "dbtype": "mysql",
+  "nodeIndex": "1",
+  "mainNode": "http://10.0.12.17:15872"
 }

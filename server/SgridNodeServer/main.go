@@ -20,17 +20,14 @@ import (
 	"sgridnext.com/src/logger"
 )
 
-
-
 func init() {
-	conf := config.LoadConfig("./config.json")
-	ormDb,err := db.InitDB(conf.Get("db"),conf.Get("dbtype"))
+	ormDb, err := db.InitDB()
 	if err != nil {
 		panic(err)
 	}
 	mapper.LoadMapper(ormDb)
 	snsList := command.LoadStatList()
-	if snsList != nil{
+	if snsList != nil {
 		command.InitCommands(snsList.StatList)
 	}
 	schedule.LoadTick()
@@ -56,8 +53,9 @@ func main() {
 	srv := grpc.NewServer(opts...)
 	protocol.RegisterNodeServantServer(srv, &service.NodeServer{})
 
-	fmt.Println("节点服务启动在 :" + BIND_ADDR)
 	if err := srv.Serve(lis); err != nil {
 		logger.App.Fatal("服务启动失败: ", err)
+	} else {
+		fmt.Println("节点服务启动在 :" + BIND_ADDR)
 	}
 }

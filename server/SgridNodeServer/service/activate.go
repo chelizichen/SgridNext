@@ -81,12 +81,24 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 	defer func() {
 		if r := recover(); r != nil {
 			mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-				TYPE:         entity.TYPE_ERROR,
-				Content:      fmt.Sprintf("激活服务失败 %s | 主机节点 %d | 版本号 | %d  | 原因 %s", serverInfo.ServerName, localNodeId, req.PackageId, r),
+				TYPE:    entity.TYPE_ERROR,
+				Content: fmt.Sprintf("激活服务失败 %s | 主机节点 %d | 版本号 | %d  | 原因 %s", serverInfo.ServerName, localNodeId, req.PackageId, r),
 			}))
 			logger.Server.Errorf("DeployServer | recover | %v", r)
 		}
 	}()
+	// 先 deactivate 当前存在的节点
+	deactivateCode, dectivateMsg := Deactivate(&protocol.ActivateReq{
+		ServerId:      req.ServerId,
+		ServerNodeIds: req.ServerNodeIds,
+	})
+	if deactivateCode != CODE_SUCCESS {
+		mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
+			TYPE:    entity.TYPE_ERROR,
+			Content: fmt.Sprintf("部署服务器失败-停止服务失败 %s | 节点 %v | 版本号 | %d  | 原因 %s", serverInfo.ServerName, req.ServerNodeIds, req.PackageId, err.Error()),
+		}))
+		return deactivateCode, dectivateMsg
+	}
 	// 遍历 当前节点下的服务节点列表，找出需要激活的节点
 	for _, node := range nodes {
 		if !patchutils.T_PatchUtils.Contains(serverNodeIds, node.Id) {
@@ -98,29 +110,17 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 			Content:      fmt.Sprintf("开始部署服务器 %s | 节点 %d | 版本号 | %d | 端口号 %d", serverInfo.ServerName, node.Id, req.PackageId, node.Port),
 		}))
 		logger.Server.Infof("DeployServer | node | %v", node)
-		currentCommand := command.CenterManager.GetCommand(node.Id)
-		if currentCommand != nil {
-			err := currentCommand.Stop()
-			if err != nil {
-				mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-					TYPE:         entity.TYPE_ERROR,
-					ServerNodeId: node.Id,
-					Content:      fmt.Sprintf("部署服务器失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", serverInfo.ServerName, node.Id, req.PackageId, node.Port, err.Error()),
-				}))
-				return CODE_FAIL, "停止服务器失败: " + err.Error()
-			}
-		}
 		targetFile := filepath.Join(cwd, constant.TARGET_SERVANT_DIR, serverName, execPath)
 		patchServerInfo := &command.ServerInfo{
-			ServerType: serverType,
-			ServerName: serverName,
-			TargetFile: targetFile,
-			BindPort:   node.Port,
-			BindHost:   node.Host,
-			NodeId:     node.Id,
+			ServerType:     serverType,
+			ServerName:     serverName,
+			TargetFile:     targetFile,
+			BindPort:       node.Port,
+			BindHost:       node.Host,
+			NodeId:         node.Id,
 			AdditionalArgs: node.AdditionalArgs,
-			ServerRunType: node.ServerRunType,
-			ServerId: serverId,
+			ServerRunType:  node.ServerRunType,
+			ServerId:       serverId,
 		}
 		logger.Server.Infof("DeployServer | patchServerInfo | %v", patchServerInfo)
 		cmd, err := patchServerInfo.CreateCommand()
