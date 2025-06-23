@@ -22,11 +22,11 @@ func main() {
 	// 初始化路由
 	engine := gin.Default()
 	routes.LoadRoutes(engine)
-	port := fmt.Sprintf(":%s", conf.Get("httpPort"))
-	err = engine.Run(port)
+	addr := fmt.Sprintf("%s:%s", conf.Get("httpHost"), conf.Get("httpPort"))
+	err = engine.Run(addr)
 	if err != nil {
 		panic(fmt.Sprintf("启动HTTP服务失败: %v", err))
 	} else {
-		fmt.Printf("HTTP服务已启动，监听端口: %s\n", port)
+		fmt.Printf("HTTP服务已启动，监听端口: %s\n", addr)
 	}
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -56,6 +57,6 @@ func ReadJson(filePath string) Config {
 
 	var result map[string]interface{}
 	json.Unmarshal(byteValue, &result)
-
+	fmt.Printf("Read Json Conf filepath | %s, value | %s", filePath, result)
 	return result
 }

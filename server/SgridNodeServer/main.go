@@ -21,6 +21,7 @@ import (
 )
 
 func init() {
+	config.LoadConfig("./config.json")
 	ormDb, err := db.InitDB()
 	if err != nil {
 		panic(err)
@@ -30,7 +31,7 @@ func init() {
 	if snsList != nil {
 		command.InitCommands(snsList.StatList)
 	}
-	schedule.LoadTick()
+	go schedule.LoadTick()
 }
 
 func main() {
@@ -56,6 +57,6 @@ func main() {
 	if err := srv.Serve(lis); err != nil {
 		logger.App.Fatal("服务启动失败: ", err)
 	} else {
-		fmt.Println("节点服务启动在 :" + BIND_ADDR)
+		logger.App.Info("节点服务启动在 :" + BIND_ADDR)
 	}
 }

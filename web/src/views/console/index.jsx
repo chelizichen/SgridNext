@@ -236,6 +236,9 @@ export default function Console() {
       return;
     }
     let serverId = node.key;
+    // 将上次全选的置空
+    console.log('clear select nodes');
+    setSelectNodes([]);
     getServerInfo({ id: serverId }).then((data) => {
       setServerInfo({
         server_name: data.data.ServerName,
@@ -260,12 +263,10 @@ export default function Console() {
         console.log("getStatus.res", res);
       });
     });
-
     getServerConfigList({ serverId: serverId }).then((res) => {
       setServerConfigList(conversionConf(res.data || []));
       console.log("getServerConfigList >> ", res);
     });
-
     getServerNodesStatus({
       server_id: serverId,
       offset: serverNodePage.offset,
@@ -323,9 +324,9 @@ export default function Console() {
       setSelectNodes(selectedRows);
     },
     getCheckboxProps: (record) => ({
-      disabled: record.name === "Disabled User", // Column configuration not to be checked
       name: record.name,
     }),
+    selectedRowKeys: selectNodes.map(node => node.id), // 关键修复：同步选中状态
   };
 
   const [fileName, setFileName] = useState("");

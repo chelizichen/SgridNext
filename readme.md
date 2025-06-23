@@ -39,10 +39,6 @@
 - **在业务进程启动后，立即将其移至独立 cgroup, 并提供资源限制功能更**（如 `/sys/fs/cgroup/business.slice/`）。
 - 这样，当节点服务停止时，系统仅清理 `sgridnode.service` cgroup，而业务进程因属于其他 cgroup 不受影响。
 
-
-
-
-
 ## 编译部署
 
 执行 ./deploy.sh 脚本进行编译部署
@@ -53,7 +49,7 @@
 
 创建指定systemctl 启动文件 **/usr/lib/systemd/system/sgridnext.service**
 
-````s
+```s
 [Unit]
 Description = sgrid next,A cloud platform for grid computing
 
@@ -63,7 +59,7 @@ ExecStart = /usr/sgridnext/sgridnext
 WorkingDirectory = /usr/sgridnext
 Environment=PATH=/usr/bin:/usr/local/bin
 Restart = no
-````
+```
 
 ExecStart 为启动文件
 WorkingDirectory 为工作目录
@@ -72,7 +68,7 @@ Environment 为环境变量
 -- 具体配置参考官方文档
 配置完之后 执行 **systemctl start sgridnext**
 
-````shell
+```shell
 # 启动
 systemctl start sgridnext
 # 重启
@@ -81,7 +77,7 @@ systemctl restart sgridnext
 systemctl stop sgridnext
 # 查看状态
 systemctl status sgridnext
-````
+```
 
 ### SgridNode 部署
 
@@ -94,7 +90,7 @@ systemctl status sgridnext
 3. 将 sgridnode 文件 拷贝至 **/usr/sgridnode/** 目录下
 4. 编写 systemctl 启动文件 **/usr/lib/systemd/system/sgridnode.service**
 
-````s
+```s
 [Unit]
 Description = sgrid next,A cloud platform for grid computing
 
@@ -104,7 +100,7 @@ ExecStart = /usr/sgridnode/sgridnode
 WorkingDirectory = /usr/sgridnode
 Environment=PATH=/usr/bin:/usr/local/bin
 Restart = no
-````
+```
 
 ### 创建节点
 
@@ -127,7 +123,7 @@ cat /sys/fs/cgroup/system.slice/xx/memory.current 查看使用内存大小
 
 端口号 PORT 和 主机地址 HOST 在生产中会以 环境变量的行式传入
 
-````go
+```go
 port := os.Getenv("SGRID_TARGET_PORT")
 fmt.Println("SGRID_TARGET_PORT: ", port)
 if port == "" {
@@ -140,7 +136,7 @@ if host == "" {
    fmt.Println("SGRID_TARGET_HOST is empty")
    host = "0.0.0.0"
 }
-````
+```
 
 ## Golang-Gin-Proxy 服务
 
@@ -148,7 +144,7 @@ if host == "" {
 
 接口定义如下
 
-````go
+```go
 
 type Proxy[T any] interface {
  // 获取服务注册表地址，进行代理链接
@@ -159,7 +155,7 @@ type Proxy[T any] interface {
  GetServerName() string
 }
 
-````
+```
 
 Proxy代理是如何做到的？
 
@@ -170,7 +166,7 @@ GetAddrs 在初始化时执行一次，随后每30s执行一次，进行代理�
 
 接口基本实现示例如下
 
-````go
+```go
 type GreetServicePrx struct{}
 
 func (g *GreetServicePrx) GetAddrs() []*distributed.BaseSvrNodeStat {
@@ -203,11 +199,11 @@ func (g *GreetServicePrx) NewClient(conn grpc.ClientConnInterface) *protocol.Gre
 func (g *GreetServicePrx)GetServerName() string {
  return "SgridTestGrpcGoServer"
 }
-````
+```
 
 grpc-client-proxy 调用远程rpc 方法示例
 
-````go
+```go
 func LoadProxy() *distributed.PrxManage[*protocol.GreetServiceClient] {
  var prx = &GreetServicePrx{}
  pm, err := distributed.LoadStringToProxy(prx)
@@ -245,13 +241,13 @@ engine.GET("/", func(c *gin.Context) {
    "message": rsp.Message,
   })
  })
-````
+```
 
 ## Golang-Grpc 服务
 
 与Gin服务类似，生产的 PORT 和 HOST 以环境变量的行式传入
 
-````go
+```go
  port := os.Getenv("SGRID_TARGET_PORT")
  fmt.Println("SGRID_TARGET_PORT: ", port)
  if port == "" {
@@ -280,4 +276,34 @@ engine.GET("/", func(c *gin.Context) {
  if err := srv.Serve(lis); err != nil {
   fmt.Println("服务启动失败: ", err)
  }
+```
+
+## Docker-Java 服务
+
+如果是 springboot 服务打包成 docker 镜像部署到测试环境的开发方式，可以使用一套shell脚本进行测试环境的快速更新，原理是通过更换镜像内的jar包进行快速更新
+
+1. 编写 docker 更新命令 (update.sh)
+
+```sh
+#! /bin/bash
+
+echo  "开始执行 docker 切换jar包"
+docker cp ./SpringBootServer.jar docker-id:/app/SpringBootServer.jar
+echo "开始执行 docker 重启服务"
+docker restart docker-id
+
+echo "部署完成"
+```
+
+2. 编写 jar 包打包命令 (build.sh)
+
+````sh
+echo "运行外部命令"
+echo "Building SpringBootServer"
+
+rm -r SpringBootServer.tar.gz
+
+tar -czf SpringBootServer.tar.gz ./SpringBootServer.jar ./update.sh
+
+echo "构建完成"
 ````
