@@ -97,6 +97,15 @@ func (t *T_PatchServer_Mapper) UpdateServerNode(node entity.ServerNode)error{
 	return err
 }
 
+func (t *T_PatchServer_Mapper) DeleteServerNode(ids []int)error{
+	err := t.db.Debug().
+		Model(&entity.ServerNode{}).
+		Where("id in (?)", ids).
+		Update("server_node_status",constant.COMM_STATUS_DELETE).
+		Error
+	return err
+}
+
 // 如果有同名的组名，返回错误
 func (t *T_PatchServer_Mapper) CreateGroup(req *entity.ServerGroup) (int, error) {
 	logger.Mapper.Info("创建服务组：", req)
@@ -189,6 +198,7 @@ func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]Serve
 		where += " and server_nodes.node_id = ? "
 		params = append(params, nodeId)
 	}
+	where += " and server_node_status in (1,2) "
 
 	query := `
 	SELECT 

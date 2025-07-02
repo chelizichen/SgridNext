@@ -48,9 +48,16 @@ export default function ServerModal({ visible, onOk, onCancel, form, groupOption
                     <Form.Item name="execFilePath" label="执行路径" rules={[{ required: true, message: '请输入执行文件路径' }]}> 
                         <Input style={{width:'100%'}} min={1} />
                     </Form.Item>
+                    <Form.Item name="logPath" label="日志文件" rules={[{ required: false, message: '请输入日志文件路径' }]}> 
+                        <Input style={{width:'100%'}} />
+                    </Form.Item>
+                    <Form.Item name="confPath" label="配置文件（TODO）" rules={[{ required: false, message: '请输入配置文件路径' }]}> 
+                        <Input style={{width:'100%'}} />
+                    </Form.Item>
                     <Form.Item name="description" label="服务描述" rules={[{ required: true, message: '请输入执行文件路径' }]}> 
                         <Input.TextArea style={{width:'100%'}} min={1} />
                     </Form.Item>
+
                 </Form>
             </Modal>
         </>

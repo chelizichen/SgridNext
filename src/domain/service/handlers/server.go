@@ -25,6 +25,7 @@ func CreateServer(ctx *gin.Context) {
 		ServerType   int    `json:"serverType"`
 		Description  string `json:"description"`
 		ExecFilePath string `json:"execFilePath"`
+		LogPath 	 string `json:"logPath"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
@@ -44,6 +45,7 @@ func CreateServer(ctx *gin.Context) {
 		CreateTime:   constant.GetCurrentTime(),
 		GroupId:      req.GroupId,
 		Description:  req.Description,
+		LogPath:      req.LogPath,
 	}
 
 	if _, err := mapper.T_Mapper.CreateServer(server); err != nil {
@@ -105,7 +107,7 @@ func CreatePackage(ctx *gin.Context) {
 				ServerId: int32(serverId),
 			})
 			if err  != nil{
-				logger.RPC.Infof("调用失败 | SyncConfigFile | err | %s",err.Error())
+				logger.RPC.Infof("调用失败 | SyncServicePackage | err | %s",err.Error())
 			}
 			return err
 		})	
@@ -296,8 +298,7 @@ func UpdateServerNode(ctx *gin.Context){
 		ServerRunType  int    `json:"server_run_type"`
 		AdditionalArgs string `json:"additional_args"`
 		ViewPage       string `json:"view_page"`
-
- }
+ 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
@@ -315,6 +316,22 @@ func UpdateServerNode(ctx *gin.Context){
 		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新成功"})
+}
+
+func DeleteServerNode(ctx *gin.Context) { 
+	var req struct {
+		Ids         []int    `json:"ids"`
+ 	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	 err := mapper.T_Mapper.DeleteServerNode(req.Ids)
+	 if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "删除失败"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "删除成功"})
 }
 
 func GetServerList(ctx *gin.Context) {

@@ -166,6 +166,9 @@ func (s *NodeServer) DownloadFile(in *protocol.DownloadFileRequest, stream proto
 		serverName := serverInfo.ServerName
 		fileName := in.FileName
 		filePath := filepath.Join(cwd, constant.TARGET_LOG_DIR, serverName, fileName)
+		if serverInfo.LogPath != "" {
+			filePath = filepath.Join(serverInfo.LogPath,in.FileName)
+		}
 		logger.App.Info("下载文件路径 %s ", filePath)
 		file, err := os.Open(filePath)
 		if err != nil {
@@ -214,6 +217,7 @@ func (s *NodeServer) DownloadFile(in *protocol.DownloadFileRequest, stream proto
 	return nil
 }
 
+// 可以指定LogPath，兼容旧服务进行日志查询
 func (s *NodeServer) GetFileList(ctx context.Context, in *protocol.GetFileListReq) (*protocol.GetFileListResponse, error) {
 	logger.App.Info("获取文件列表 %v ", in.String())
 	if in.Type == FILE_TYPE_LOG {
@@ -224,6 +228,9 @@ func (s *NodeServer) GetFileList(ctx context.Context, in *protocol.GetFileListRe
 		}
 		serverName := serverInfo.ServerName
 		filePath := filepath.Join(cwd, constant.TARGET_LOG_DIR, serverName)
+		if serverInfo.LogPath != "" {
+			filePath = serverInfo.LogPath
+		}
 		files, err := os.ReadDir(filePath)
 		if err != nil {
 			// 返回错误信息
@@ -244,11 +251,18 @@ func (s *NodeServer) GetFileList(ctx context.Context, in *protocol.GetFileListRe
 	return nil, nil
 }
 
-
+// 可以指定LogPath，兼容旧服务进行日志查询
 func (s *NodeServer) GetLog(ctx context.Context, in *protocol.GetLogReq) (*protocol.GetLogRes, error) {
 	logger.App.Info("获取日志 %v ", in.String())
+	serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
+	if err != nil {
+		return nil, err
+	}
 	cwd,_:= os.Getwd()
 	file_path := filepath.Join(cwd,constant.TARGET_LOG_DIR,in.ServerName,in.FileName)
+	if serverInfo.LogPath != "" {
+		file_path = filepath.Join(serverInfo.LogPath,in.FileName)
+	}
 	rsp,err := QueryLog(file_path,in.LogType,in.Keyword,in.Len)
 	if err!= nil {
 		return nil,err

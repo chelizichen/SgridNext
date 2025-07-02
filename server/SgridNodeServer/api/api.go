@@ -101,6 +101,7 @@ func (r GetConfigListReq) ToJSON() []byte {
 		r.ServerId))
 }
 
+// 服务启动前从主控拉取配置文件列表
 func GetConfigList(req GetConfigListReq) error {
 	client := &http.Client{}
 	mainNodePath := config.Conf.Get("mainNode")

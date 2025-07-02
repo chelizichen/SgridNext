@@ -102,7 +102,7 @@ const LogView = () => {
     <div style={{ padding: '24px' }}>
       <Row gutter={16} style={{ marginBottom: '24px' }}>
         <Col span={4}>
-          <Card title="日志文件列表" bordered={false}>
+          <Card title="日志文件列表" bordered={false} style={{maxHeight:"80vh", overflowY: "auto"}}>
             <Table 
               columns={columns}
               dataSource={files}

@@ -13,11 +13,13 @@ import {
   Table,
   Input,
   message,
+  Tag
 } from "antd";
 import { useMediaQuery } from "react-responsive";
 import ButtonGroup from "antd/es/button/button-group";
 import {
   checkServerNodesStatus,
+  deleteServerNode,
   getGroupList,
   getNodeList,
   getServerConfigList,
@@ -221,6 +223,7 @@ export default function Console() {
     create_time: "",
     server_type: "",
     exec_path: "",
+    log_path: "",
   });
   let [serverNodes, setServerNodes] = useState([]);
   let [serverConfigList, setServerConfigList] = useState({});
@@ -247,6 +250,7 @@ export default function Console() {
         exec_path: data.data.ExecFilePath,
         desc: data.data.Description,
         create_time: data.data.CreateTime,
+        log_path: data.data.LogPath,
       });
     });
     getServerNodes({ id: serverId }).then((res) => {
@@ -405,6 +409,28 @@ export default function Console() {
     }
     setDeployModalVisible(true);
   };
+
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const handleDeleteServerNodes = (type)=>{
+    if(type == 1){
+      setDeleteModalVisible(true)
+    }
+    if(type == 2){
+      let body = {
+        ids: selectNodes.map(v=>v.id)
+      }
+      deleteServerNode(body).then(res=>{ 
+        if(res.success){
+          messageApi.success("删除成功");
+          getServerNodes();
+        }else{
+          messageApi.error(res.msg);
+        }
+      })
+    }
+
+  }
+
   const [historyModelVisible, setHistoryModelVisible] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const handleCheckhistory = (fileName) => {
@@ -557,6 +583,9 @@ export default function Console() {
                 <Descriptions.Item label="执行地址">
                   {serverInfo.exec_path}
                 </Descriptions.Item>
+                <Descriptions.Item label="日志地址">
+                  {serverInfo.log_path || "${cwd}/server/SgridPatchServer/log/"+serverInfo.server_name}
+                </Descriptions.Item>
               </Descriptions>
             ) : (
               <p>请从左侧选择节点</p>
@@ -619,7 +648,7 @@ export default function Console() {
                   >
                     停止
                   </Button>
-                  <Button onClick={handleRefresh} danger>
+                  <Button onClick={()=>handleDeleteServerNodes(1)} danger>
                     删除
                   </Button>
                 </ButtonGroup>
@@ -774,6 +803,23 @@ export default function Console() {
           handleUpsertConfig(1, fileName);
         }}
       ></HistoryModal>
+
+      <Modal
+        title="确认删除以下服务节点吗"
+        open={deleteModalVisible}
+        onOk={()=>handleDeleteServerNodes(2)}
+        onCancel={() => setDeleteModalVisible(false)}
+      >
+        <div>
+          {selectNodes.map((item) => (
+            <div>
+              <Tag color="error" bordered>
+                {item.host}:{item.port}
+              </Tag>
+            </div>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }

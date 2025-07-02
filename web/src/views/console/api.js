@@ -31,7 +31,9 @@ export function createServerNode(data) {
 export function updateServerNode(data) {
   return request({ url: "/server/updateServerNode", data });
 }
-
+export function deleteServerNode(data){
+  return request({ url: "/server/deleteServerNode",data });
+}
 export function createGroup(data) {
   return request({ url: "/server/createGroup", data });
 }

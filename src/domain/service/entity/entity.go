@@ -9,6 +9,7 @@ type Server struct {
 	CreateTime   string `gorm:"column:create_time;type:varchar(64)"`
 	GroupId      int    `gorm:"column:group_id"`
 	Description  string `gorm:"column:description;type:varchar(255)"`
+	LogPath 	 string `gorm:"column:log_path;type:varchar(255)"`
 }
 
 type ServerGroup struct {

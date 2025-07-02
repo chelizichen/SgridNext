@@ -193,25 +193,30 @@ func (c *Command) Stop() error {
 		return nil
 	}
 	logger.CMD.Infof("正在停止进程: %d", c.GetPid())
-	groups,err := FindProcessGroup(c.GetPid())
-	if err != nil {
-		logger.CMD.Errorf("failed to kill process: %v", err)
-		return err
-	}
-	for _,pid := range groups {
-		logger.CMD.Infof("正在停止进程: %d", pid)
-		if err := Kill(pid); err != nil {
-			logger.CMD.Errorf("failed to kill process: %v", err)
-			return err
-		}
-	}
+	// groups,err := FindProcessGroup(c.GetPid())
+	// if err != nil {
+	// 	logger.CMD.Errorf("failed to kill process: %v", err)
+	// 	return err
+	// }
+	// for _,pid := range groups {
+	// 	logger.CMD.Infof("正在停止进程: %d", pid)
+	// 	if err := Kill(pid); err != nil {
+	// 		logger.CMD.Errorf("failed to kill process: %v", err)
+	// 		return err
+	// 	}
+	// }
 	// if err := c.cmd.Process.Kill(); err != nil {
 	// 	if errors.Is(err, os.ErrProcessDone) {
 	// 		return nil // 进程已结束
 	// 	}
 	// 	return fmt.Errorf("kill process failed: %w", err)
 	// }
-	return nil
+	err := Kill(c.GetPid())
+	if err != nil {
+		logger.CMD.Errorf("删除节点失败: %v", err)
+		return err
+	}
+	return err
 }
 
 func (c *Command) CheckStat() (pid int, alive bool, err error) {
