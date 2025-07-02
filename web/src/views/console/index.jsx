@@ -109,11 +109,12 @@ export default function Console() {
         );
       },
     },
-    { title: "创建时间", key: "CreateTime", dataIndex: "CreateTime" },
+    { title: "创建时间", key: "CreateTime", dataIndex: "CreateTime"},
     {
       title: "操作",
       key: "action",
       dataIndex: "action",
+      fixed: "right",
       render: (text, record) => {
         return (
           <ButtonGroup size="middle">
@@ -128,7 +129,7 @@ export default function Console() {
   const ServerNodesColumns = [
     { title: "主机地址", dataIndex: "host", key: "host",render:(text,record)=>{
         return (
-          <div style={{"cursor":"pointer",color:"#1677ff"}} onClick={()=>toLogPage(record,serverInfo.server_name,serverInfo.server_id)}>
+          <div style={{color:"#1677ff"}}>
             {record.host}
           </div>
         )
@@ -146,10 +147,10 @@ export default function Console() {
         if (record.server_node_status === 2) {
           return <span style={{ color: "red" }}>offline</span>;
         }
-        return <span style={{ color: "black" }}>已删除</span>;
+        return <span style={{ color: "black" }}>deleted</span>;
       },
     },
-    { title: "版本号", key: "patch_id", dataIndex: "patch_id",render:(text,record)=>toViewPage(record) },
+    { title: "版本号", key: "patch_id", dataIndex: "patch_id"},
     { title: "运行类型", key: "server_run_type", dataIndex: "server_run_type",  
       render: (text, record) => {
         if(record.server_run_type === 0){
@@ -176,6 +177,16 @@ export default function Console() {
       },
     },
     { title: "创建时间", dataIndex: "node_create_time", key: "node_create_time" },
+    { title: "操作", dataIndex: "node_create_time", key: "node_create_time",   render: (text, record) => {
+      return (
+        <>
+           <Button type="primary" onClick={()=>toLogPage(record,serverInfo.server_name,serverInfo.server_id)} style={{marginRight:"16px"}}>日志</Button>
+          {
+            record.view_page && <Button onClick={()=>window.open(record.view_page,"_blank")}>预览</Button>
+          }
+        </>
+      );
+    }, },
   ];
 
   function toLogPage(record,serverName,serverId){
@@ -183,13 +194,6 @@ export default function Console() {
     let newPath = location.pathname + "/#" + new_path
     window.open(newPath,"_blank")
   }
-
-  function toViewPage(record){
-    return (
-      <div  style={{"cursor":"pointer",color:"#1677ff"}} onClick={()=>window.open(record.view_page,"_blank")}>{record.patch_id}</div>
-    )
-  }
-
   
 
   function handleUpdateNodeStatus(record,status) {
