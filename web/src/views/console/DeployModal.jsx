@@ -24,6 +24,7 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
   useEffect(() => {
     if(!serverInfo.server_id) return;
     initUploadPackageList()
+    setSelectedPublishNodes([])
   }, [serverInfo.server_id])
 
   const handleUpload = () => {
@@ -179,12 +180,10 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
                             }
                           }}
                         />,
-                        <span>id</span>,
-                        <span>{item.ID}</span>,
-                        <span>hash</span>,
+                        <span>id:{item.ID}</span>,
                         <span>{item.Hash.slice(0,5)}</span>,
-                        <span>createTime</span>,
                         <span>{item.CreateTime}</span>,
+                        <span>{item.Commit}</span>
                       ]}
                     >
                       {item.title}
