@@ -11,6 +11,7 @@ import (
 	"sgridnext.com/server/SgridNodeServer/api"
 	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
+	"sgridnext.com/server/SgridNodeServer/util"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
@@ -221,17 +222,12 @@ func (s *NodeServer) DownloadFile(in *protocol.DownloadFileRequest, stream proto
 func (s *NodeServer) GetFileList(ctx context.Context, in *protocol.GetFileListReq) (*protocol.GetFileListResponse, error) {
 	logger.App.Info("获取文件列表 %v ", in.String())
 	if in.Type == FILE_TYPE_LOG {
-		cwd, _ := os.Getwd()
 		serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
 		if err != nil {
 			return nil, err
 		}
-		serverName := serverInfo.ServerName
-		filePath := filepath.Join(cwd, constant.TARGET_LOG_DIR, serverName)
-		if serverInfo.LogPath != "" {
-			filePath = serverInfo.LogPath
-		}
-		files, err := os.ReadDir(filePath)
+		logDir := util.GetLogDir(&serverInfo)
+		files, err := os.ReadDir(logDir)
 		if err != nil {
 			// 返回错误信息
 			logger.App.Errorf("读取目录失败 %s ", err.Error())
@@ -258,14 +254,10 @@ func (s *NodeServer) GetLog(ctx context.Context, in *protocol.GetLogReq) (*proto
 	if err != nil {
 		return nil, err
 	}
-	cwd,_:= os.Getwd()
-	file_path := filepath.Join(cwd,constant.TARGET_LOG_DIR,in.ServerName,in.FileName)
-	if serverInfo.LogPath != "" {
-		file_path = filepath.Join(serverInfo.LogPath,in.FileName)
-	}
-	rsp,err := QueryLog(file_path,in.LogType,in.Keyword,in.Len)
-	if err!= nil {
-		return nil,err
+	logPath := util.GetLogPath(&serverInfo, in.FileName)
+	rsp, err := QueryLog(logPath, in.LogType, in.Keyword, in.Len)
+	if err != nil {
+		return nil, err
 	}
 	return &protocol.GetLogRes{
 		Code: CODE_SUCCESS,

@@ -13,12 +13,15 @@ import (
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/server/SgridNodeServer/schedule"
 	"sgridnext.com/server/SgridNodeServer/service"
+	"sgridnext.com/server/SgridNodeServer/util"
 	"sgridnext.com/src/config"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/db"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
 )
+
+var BIND_ADDR = ""
 
 func init() {
 	config.LoadConfig("./config.json")
@@ -30,16 +33,16 @@ func init() {
 	snsList := command.LoadStatList()
 	if snsList != nil {
 		command.InitCommands(snsList.StatList)
+	}else{
+		// 创建该文件
+		command.InitStatFile()
 	}
-	go schedule.LoadTick()
+	defer schedule.LoadTick()
+	HOST := util.GetHost()
+	BIND_ADDR = fmt.Sprintf("%s:%s", HOST, constant.NODE_PORT)
 }
 
 func main() {
-	HOST, err := mapper.T_Mapper.GetHost(config.Conf.GetLocalNodeId())
-	if err != nil {
-		panic(fmt.Sprintf("获取主机信息失败 %v", err))
-	}
-	BIND_ADDR := fmt.Sprintf("%s:%s", HOST, constant.NODE_PORT)
 	lis, err := net.Listen("tcp", BIND_ADDR)
 	if err != nil {
 		logger.App.Fatal("监听失败: ", err)

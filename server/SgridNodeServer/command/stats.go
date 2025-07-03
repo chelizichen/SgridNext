@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"sgridnext.com/src/constant"
 	"sgridnext.com/src/logger"
 )
 
@@ -40,6 +41,30 @@ func LoadStatList() *SvrNodeStatMap {
 	}
 	return statMap
 }
+
+func InitStatFile(){
+	cwd, _ := os.Getwd()
+	stat_path := filepath.Join(cwd, "stat.json")
+	file,err  := os.Create(stat_path)
+	if err != nil {
+		logger.App.Errorf("创建stat.json文件失败: %v", err)
+		return
+	}
+	logger.App.Infof("创建stat.json文件成功: %v", stat_path)
+	defer file.Close()
+	jsonStr, _ := json.Marshal(&SvrNodeStatMap{
+		UpdateTime: constant.GetCurrentTime(),
+		StatList: []*SvrNodeStat{},
+	})
+	_, err = file.Write(jsonStr)
+	if err != nil {
+		logger.App.Errorf("创建stat.json文件失败: %v", err)
+		return
+	}
+	logger.App.Infof("创建stat.json文件成功: %v", stat_path)
+	return 
+}
+
 
 func InitCommands(snsList []*SvrNodeStat) {
 	for _, svr := range snsList {

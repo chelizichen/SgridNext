@@ -8,7 +8,7 @@ import (
 )
 
 func Test_ReadJson(t *testing.T) {
-	data := config.ReadJson("./test.json")
+	data := config.LoadConfig("./test.json")
 	t.Logf("data %s \n", data)
 	assert.Equal(t, data["serverName"], "TestServer")
 }

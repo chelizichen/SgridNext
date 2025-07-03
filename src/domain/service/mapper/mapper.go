@@ -325,3 +325,12 @@ func (t *T_PatchServer_Mapper) GetHost(nodeId int) (string, error) {
 		First(&Node)
 	return Node.Host, res.Error
 }
+
+func (t *T_PatchServer_Mapper) GetNodeIdByHost(host string) (int, error) {
+	var Node entity.Node
+	res := t.db.Debug().
+		Model(&entity.Node{}).
+		Where("host =?", host).
+		First(&Node)
+	return Node.ID, res.Error
+}
