@@ -43,6 +43,9 @@ export default function AddNodeModal({ visible, onOk, onCancel, form,afterOpenCh
                     <Form.Item name="Os" label="操作系统" rules={[{ required: true, message: '请选择所属服务组' }]}> 
                       <Input style={{width:'100%'}} /> 
                     </Form.Item>
+                    <Form.Item name="alias" label="别名" rules={[{ required: false, message: '请输入别名' }]}> 
+                      <Input style={{width:'100%'}} /> 
+                    </Form.Item>
                 </Form>
             </Modal>
         </>

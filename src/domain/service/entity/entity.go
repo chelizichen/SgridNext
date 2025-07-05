@@ -41,6 +41,8 @@ type Node struct {
 	Memory     int    `gorm:"column:memory"`
 	Os         string `gorm:"column:os;type:varchar(64)"`
 	CreateTime string `gorm:"column:create_time;type:varchar(64)"`
+	UpdateTime string `gorm:"column:update_time;type:varchar(64)"`
+	Alias      string `gorm:"column:alias;type:varchar(255)"`
 }
 
 type ServerPackage struct {

@@ -12,6 +12,7 @@ import (
 	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/server/SgridNodeServer/util"
+	"sgridnext.com/src/config"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
@@ -24,9 +25,7 @@ const (
 	CODE_FAIL    = -1
 )
 
-const (
-	FILE_TYPE_LOG = 1
-)
+
 
 type NodeServer struct {
 	protocol.UnimplementedNodeServantServer
@@ -34,6 +33,11 @@ type NodeServer struct {
 
 func (n *NodeServer) KeepAlive(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	logger.Alive.Info("alive called")
+	err := mapper.T_Mapper.UpdateNodeUpdateTime(config.Conf.GetLocalNodeId())
+	if err != nil {
+		logger.App.Errorf("更新节点更新时间失败: %v", err)
+	}
+	logger.App.Infof("更新节点更新时间成功: %v", config.Conf.GetLocalNodeId())
 	now := constant.GetCurrentTime()
 	command.CenterManager.SyncStat(now)
 	return &emptypb.Empty{}, nil
@@ -158,7 +162,7 @@ func (s *NodeServer) CheckStat(ctx context.Context, in *protocol.CheckStatReq) (
 
 func (s *NodeServer) DownloadFile(in *protocol.DownloadFileRequest, stream protocol.NodeServant_DownloadFileServer) error {
 	logger.App.Info("下载文件 %v ", in.String())
-	if in.Type == FILE_TYPE_LOG {
+	if in.Type == constant.FILE_TYPE_LOG {
 		cwd, _ := os.Getwd()
 		serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
 		if err != nil {
@@ -221,7 +225,7 @@ func (s *NodeServer) DownloadFile(in *protocol.DownloadFileRequest, stream proto
 // 可以指定LogPath，兼容旧服务进行日志查询
 func (s *NodeServer) GetFileList(ctx context.Context, in *protocol.GetFileListReq) (*protocol.GetFileListResponse, error) {
 	logger.App.Info("获取文件列表 %v ", in.String())
-	if in.Type == FILE_TYPE_LOG {
+	if in.Type == constant.FILE_TYPE_LOG {
 		serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
 		if err != nil {
 			return nil, err

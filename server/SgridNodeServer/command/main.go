@@ -159,7 +159,7 @@ func (c *Command) Start() error {
 		return fmt.Errorf("command not initialized")
 	}
 	cwd, _ := os.Getwd()
-	redirectFilePath := filepath.Join(cwd, constant.TARGET_LOG_DIR, c.serverName, "waterfull.log")
+	redirectFilePath := filepath.Join(cwd, constant.TARGET_LOG_DIR, c.serverName, c.serverName+".log")
 	if err := os.MkdirAll(filepath.Dir(redirectFilePath), 0755); err != nil {
 		logger.App.Errorf("创建目录失败: %v", err)
 		return fmt.Errorf("创建目录失败: %v", err)

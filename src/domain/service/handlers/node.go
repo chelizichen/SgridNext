@@ -38,6 +38,7 @@ func CreateNode(ctx *gin.Context) {
 		Os     string `json:"Os"`
 		Memory int    `json:"Memory"`
 		Cpus   int    `json:"cpus"`
+		Alias  string `json:"alias"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
@@ -51,6 +52,7 @@ func CreateNode(ctx *gin.Context) {
 		CreateTime: constant.GetCurrentTime(),
 		ID:         0,
 		NodeStatus: constant.COMM_STATUS_ONLINE,
+		Alias:      req.Alias,
 	}
 	id, err := mapper.T_Mapper.CreateNode(node)
 	if err != nil {
@@ -76,6 +78,22 @@ func UpdateMachineNode(ctx *gin.Context){
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新节点成功"})
 }
 
+func UpdateMachineNodeAlias(ctx *gin.Context){
+	var req struct{
+		Id int `json:"id"`
+		Alias string `json:"alias"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	err := mapper.T_Mapper.UpdateMachineNodeAlias(req.Id, req.Alias)
+	if err != nil{
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新节点别名失败", "error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新节点别名成功"})
+}
 
 func GetServerNodesStatus(ctx *gin.Context) {
 	var req struct {

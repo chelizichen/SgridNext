@@ -112,6 +112,10 @@ export function updateMachineNodeStatus(data){
   return request({ url: "/server/updateNode", data });
 }
 
+export function updateMachineNodeAlias(data){
+  return request({ url: "/server/updateNodeAlias", data });
+}
+
 // downloadFile({
 //     serverId:1,
 //     fileName:"waterfull.log",

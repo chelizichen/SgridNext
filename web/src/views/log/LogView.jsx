@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Button, Card, Col, Input, Row, Select, Table, Typography } from 'antd';
 import { DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { downloadFile, getFileList, getLog } from '../console/api';
+import { _constant } from '../../common/constant';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -32,7 +33,7 @@ const LogView = () => {
     const nodeId = params.get('nodeId');
     if (host && serverId) {
       setLoading(true);
-      getFileList({ host, serverId : Number(serverId),type:1 }).then(res => {
+      getFileList({ host, serverId : Number(serverId),type:_constant.FILE_TYPE_LOG }).then(res => {
         console.log('res',res);
         setPreviewParams({
           ...previewParams,
@@ -52,7 +53,7 @@ const LogView = () => {
       downloadFile({
         serverId:previewParams.serverId,
         fileName:selectedFile,
-        type:1,
+        type:_constant.FILE_TYPE_LOG,
         host:previewParams.host
       })
       // window.open(`/api/downloadFile?file=${selectedFile}`);

@@ -91,29 +91,42 @@ func DownloadFile(ctx *gin.Context) {
 		return
 	}
 	logger.App.Info("DownloadFile %v", req)
-	proxy.ProxyMap.DispatchByHost(req.Host, func(client *protocol.NodeServantClient) error {
-		rsp, err := (*client).DownloadFile(ctx, &protocol.DownloadFileRequest{
-			ServerId: int32(req.ServerId),
-			FileName: req.FileName,
-			Type:     int32(req.Type),
-		})
+		// 包就不用走 服务端了， 走本地就行了，主控直接下载
+	if req.Type == constant.FILE_TYPE_PACKAGE {
+		serverInfo, err := mapper.T_Mapper.GetServerInfo(req.ServerId)
 		if err != nil {
-			logger.App.Errorf("下载文件失败 %s ", err.Error())
-			return err
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务信息失败"})
+			return
 		}
-		for {
-			rsp, err := rsp.Recv()
+		cwd, _ := os.Getwd()
+		file_path := filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, serverInfo.ServerName, req.FileName)
+		ctx.File(file_path)
+		return
+	}else{
+		proxy.ProxyMap.DispatchByHost(req.Host, func(client *protocol.NodeServantClient) error {
+			rsp, err := (*client).DownloadFile(ctx, &protocol.DownloadFileRequest{
+				ServerId: int32(req.ServerId),
+				FileName: req.FileName,
+				Type:     int32(req.Type),
+			})
 			if err != nil {
-				logger.App.Errorf("接受下载文件失败 %s ", err.Error())
+				logger.App.Errorf("下载文件失败 %s ", err.Error())
 				return err
 			}
-			if rsp.IsEnd {
-				logger.App.Info("文件下载完成")
-				return nil
+			for {
+				rsp, err := rsp.Recv()
+				if err != nil {
+					logger.App.Errorf("接受下载文件失败 %s ", err.Error())
+					return err
+				}
+				if rsp.IsEnd {
+					logger.App.Info("文件下载完成")
+					return nil
+				}
+				ctx.Data(http.StatusOK, "application/octet-stream", rsp.Data)
 			}
-			ctx.Data(http.StatusOK, "application/octet-stream", rsp.Data)
-		}
-	})
+		})
+	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "下载文件成功"})
 }
 

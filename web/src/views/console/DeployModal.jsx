@@ -1,7 +1,9 @@
 import React, { useState,useEffect } from 'react';
-import { Modal, Upload, Input, Button, List, message,Divider } from 'antd';
+import { Modal, Upload, Input, Button, List, message,Divider, Table } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { deployServer, getServerPackageList, uploadPackage } from './api';
+import { downloadFile } from './api';
+import { _constant } from '../../common/constant';
 
 export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes }) {
   const [fileList, setFileList] = useState([]);
@@ -11,21 +13,34 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
   const [messageApi, contextHolder] = message.useMessage();
   const [uploadPackageList,setUploadPackageList] = useState([]);
   const [packageId,setPackageId] = useState(0);
+  const [offset,setOffset] = useState(0);
+  const [size,setSize] = useState(5);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   function initUploadPackageList(){
-    getServerPackageList({id:serverInfo.server_id}).then(res=>{
+    setLoading(true);
+    getServerPackageList({id:serverInfo.server_id,offset:offset,size:size}).then(res=>{
       if(res.success){
         setUploadPackageList(res.data);
+        setTotal(res.total || res.data.length);
       }else{
         messageApi.error(res.msg);
-      }})
+      }
+      setLoading(false);
+    })
   }
 
   useEffect(() => {
     if(!serverInfo.server_id) return;
     initUploadPackageList()
     setSelectedPublishNodes([])
-  }, [serverInfo.server_id])
+  }, [serverInfo.server_id, offset, size])
+
+  const handleTableChange = (pagination) => {
+    setOffset((pagination.current - 1) * pagination.pageSize);
+    setSize(pagination.pageSize);
+  };
 
   const handleUpload = () => {
     setUploading(true);
@@ -83,6 +98,21 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
     onOk && onOk();
   };
 
+  useEffect(()=>{
+    setOffset(0);
+    setSize(5);
+  },[serverInfo.server_id])
+
+  function handleDownload(record){
+    console.log('record',record);
+    downloadFile({
+      serverId:serverInfo.server_id,
+      fileName:record.FileName,
+      type:_constant.FILE_TYPE_PACKAGE,
+      host:record.Host
+    })
+  }
+
   return (
     <>
       {contextHolder}
@@ -128,67 +158,137 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
         </div>
         {nodes.length > 0 && (
           <>
-            <List
-              header={<div>节点列表（可多选）</div>}
-              bordered
+            <div style={{ marginBottom: 16 }}>
+              <h4>节点列表（可多选）</h4>
+            </div>
+            <Table
               dataSource={nodes}
-              renderItem={item => (
-                <List.Item
-                  actions={[
+              columns={[
+                {
+                  title: '选择',
+                  key: 'select',
+                  width: 80,
+                  render: (_, record) => (
                     <input
                       type="checkbox"
-                      checked={selectedPublishNodes.includes(item.id)}
+                      checked={selectedPublishNodes.includes(record.id)}
                       onChange={e => {
                         if (e.target.checked) {
-                          setSelectedPublishNodes([...selectedPublishNodes, item.id]);
+                          setSelectedPublishNodes([...selectedPublishNodes, record.id]);
                         } else {
-                          setSelectedPublishNodes(selectedPublishNodes.filter(k => k !== item.id));
+                          setSelectedPublishNodes(selectedPublishNodes.filter(k => k !== record.id));
                         }
                       }}
-                    />,
-                    <span>host</span>,
-                    <span>{item.host}</span>,
-                    <span>patch_id</span>,
-                    <span>{item.patch_id}</span>,
-                  ]}
-                >
-                  {item.title}
-                </List.Item>
-              )}
+                    />
+                  )
+                },
+                {
+                  title: '别名',
+                  dataIndex: 'alias',
+                  key: 'alias',
+                  width: 150,
+                },
+                {
+                  title: 'Host',
+                  dataIndex: 'host',
+                  key: 'host',
+                  width: 150,
+                },
+                {
+                  title: 'Port',
+                  dataIndex: 'port',
+                  key: 'port',
+                  width: 150,
+                },
+                {
+                  title: 'Patch ID',
+                  dataIndex: 'patch_id',
+                  key: 'patch_id',
+                  width: 100,
+                }
+              ]}
+              rowKey="id"
+              pagination={false}
+              size="small"
+              bordered
             />
           </>
         )}
-        <Divider />
+        <div style={{ marginBottom: '16px',marginTop: '16px' }}>
+          <h4>发布列表</h4>
+        </div>
         {
           uploadPackageList.length > 0 && (
               <>
-                <List
-                  header={<div>发布列表</div>}
-                  bordered
+                <Table
                   dataSource={uploadPackageList}
-                  renderItem={item => (
-                    <List.Item
-                      actions={[
+                  bordered
+                  columns={[
+                    {
+                      title: '选择',
+                      key: 'select',
+                      width: 80,
+                      render: (_, record) => (
                         <input
                           type="checkbox"
-                          checked={packageId == item.ID }
+                          checked={packageId === record.ID}
                           onChange={e => {
                             if (e.target.checked) {
-                              setPackageId(item.ID)
+                              setPackageId(record.ID)
                             } else {
                               setPackageId(0)
                             }
                           }}
-                        />,
-                        <span>id:{item.ID}</span>,
-                        <span>{item.Hash.slice(0,5)}</span>,
-                        <span>{item.CreateTime}</span>,
-                        <span>{item.Commit}</span>
-                      ]}
-                    >
-                      {item.title}
-                    </List.Item>
-                  )}
+                        />
+                      )
+                    },
+                    {
+                      title: 'ID',
+                      dataIndex: 'ID',
+                      key: 'ID',
+                      width: 80,
+                    },
+                    {
+                      title: 'Hash',
+                      dataIndex: 'Hash',
+                      key: 'Hash',
+                      width: 200,
+                    },
+                    {
+                      title: '创建时间',
+                      dataIndex: 'CreateTime',
+                      key: 'CreateTime',
+                      width: 150,
+                    },
+                    {
+                      title: 'Commit',
+                      dataIndex: 'Commit',
+                      key: 'Commit',
+                      ellipsis: true,
+                    },
+                    {
+                      title: '操作',
+                      key: 'action',
+                      width: 100,
+                      render: (_, record) => (
+                        <Button  onClick={()=>{
+                          handleDownload(record)
+                        }}>下载</Button>
+                      )
+                    } 
+                  ]}
+                  rowKey="ID"
+                  pagination={{
+                    current: Math.floor(offset / size) + 1,
+                    pageSize: size,
+                    total: total,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条/共 ${total} 条`,
+                  }}
+                  onChange={handleTableChange}
+                  loading={loading}
+                  size="small"
                 />
               </>
           )
@@ -197,7 +297,7 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
           type="primary"
           style={{ marginTop: 16 }}
           onClick={handlePublish}
-          disabled={!selectedPublishNodes.length && !packageId}
+          disabled={!selectedPublishNodes.length || !packageId}
           block
         >
           发布

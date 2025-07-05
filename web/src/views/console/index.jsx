@@ -29,6 +29,7 @@ import {
   getServerNodesStatus,
   restartServer,
   stopServer,
+  updateMachineNodeAlias,
   updateMachineNodeStatus,
 } from "./api";
 import { getServerNodeStatusType, getServerType } from "./constant";
@@ -81,6 +82,13 @@ export default function Console() {
   const [selectNodes, setSelectNodes] = useState([]);
 
   const NodeColumns = [
+    { title: "别名", dataIndex: "Alias", key: "Alias", render: (text, record) => {
+      return (
+        <div style={{width:"48px"}}>
+          {record.Alias}
+        </div>
+      )
+    } },
     { title: "主机地址", dataIndex: "Host", key: "Host" },
     {
       title: "状态",
@@ -109,16 +117,16 @@ export default function Console() {
         );
       },
     },
-    { title: "创建时间", key: "CreateTime", dataIndex: "CreateTime"},
+    { title: "上报时间", key: "UpdateTime", dataIndex: "UpdateTime"},
     {
       title: "操作",
       key: "action",
       dataIndex: "action",
-      fixed: "right",
       render: (text, record) => {
         return (
-          <ButtonGroup size="middle">
-            <Button  onClick={()=>handleUpdateNodeStatus(record,1)}>上线</Button>
+          <ButtonGroup size="small">
+            <Button onClick={()=>handleUpdateNodeAlias(record)}>别名</Button>
+            <Button onClick={()=>handleUpdateNodeStatus(record,1)}>上线</Button>
             <Button danger  onClick={()=>handleUpdateNodeStatus(record,2)}>下线</Button>
           </ButtonGroup>
         );
@@ -180,9 +188,9 @@ export default function Console() {
     { title: "操作", dataIndex: "node_create_time", key: "node_create_time",   render: (text, record) => {
       return (
         <>
-           <Button type="primary" onClick={()=>toLogPage(record,serverInfo.server_name,serverInfo.server_id)} style={{marginRight:"16px"}}>日志</Button>
+           <Button size="small" type="primary" onClick={()=>toLogPage(record,serverInfo.server_name,serverInfo.server_id)} style={{marginRight:"16px"}}>日志</Button>
           {
-            record.view_page && <Button onClick={()=>window.open(record.view_page,"_blank")}>预览</Button>
+            record.view_page && <Button size="small" onClick={()=>window.open(record.view_page,"_blank")}>预览</Button>
           }
         </>
       );
@@ -204,6 +212,7 @@ export default function Console() {
     }).then(res=>{
       if(res.success){
         messageApi.success("操作成功");
+        initServersAndNodes()
       }else{
         messageApi.error(res.msg);
       }
@@ -451,6 +460,62 @@ export default function Console() {
         return { color: "black" };
     }
   }
+
+  function exportSgridReleaseConf(){
+    let apiPath = window.location.origin
+    let content = `
+    # SgridNext 自动发布配置
+    # 执行 sgridnext 从 当前目录寻找 sgridnext.release 文件, 读取配置项, 进行发布
+
+    # 发布地址
+    DEPLOY_PATH = "${apiPath}"
+    
+    # 服务ID
+    SERVER_ID = ${serverInfo.server_id}
+    
+    # 服务名
+    SERVER_NAME = "${serverInfo.server_name}"
+
+    # 包地址 此项需要手动填写
+    # 例如：/archive/SgridTestJavaServer.tar.gz
+    PACKAGE_PATH = "/archive/${serverInfo.server_name}.tar.gz"
+
+    `
+    let blob = new Blob([content], { type: "text/plain" });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "sgridnext.release";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const [updateNodeAliasVisible, setUpdateNodeAliasVisible] = useState(false);
+  const [updateNodeAliasForm] = Form.useForm();
+  const handleUpdateNodeAlias = (record) => {
+    setUpdateNodeAliasVisible(true);
+    updateNodeAliasForm.resetFields();
+    console.log('record',record);
+    updateNodeAliasForm.setFieldValue("id",record.ID)
+    updateNodeAliasForm.setFieldValue("host",record.Host)
+  }
+  const handleUpdateNodeAliasOk = () => {
+    updateNodeAliasForm.validateFields().then((values) => {
+      updateMachineNodeAlias({
+        id: updateNodeAliasForm.getFieldValue("id"),
+        alias: values.alias,
+      }).then(res=>{
+        if(res.success){
+          messageApi.success("更新别名成功");
+          setUpdateNodeAliasVisible(false);
+          initServersAndNodes();
+        }else{
+          messageApi.error(res.msg);
+        }
+      })
+    });
+  }
+
   return (
     <div style={{ padding: 24 }}>
       {contextHolder}
@@ -565,7 +630,12 @@ export default function Console() {
           <Card
             title="服务信息"
             variant={true}
-            extra={<Button onClick={handleRefresh}>刷新</Button>}
+            extra={
+            <ButtonGroup> 
+              <Button onClick={handleRefresh}>刷新</Button>
+              <Button onClick={exportSgridReleaseConf} disabled={!serverInfo.server_id}>导出配置</Button>
+            </ButtonGroup>
+            }
           >
             {serverInfo ? (
               <Descriptions>
@@ -588,7 +658,13 @@ export default function Console() {
                   {serverInfo.exec_path}
                 </Descriptions.Item>
                 <Descriptions.Item label="日志地址">
-                  {serverInfo.log_path || "${cwd}/server/SgridPatchServer/log/"+serverInfo.server_name}
+                  {
+                  serverInfo.log_path || (
+                  serverInfo.server_id ? 
+                   "${cwd}/server/SgridPatchServer/log/"+serverInfo.server_name
+                    :
+                   ''
+                  )}
                 </Descriptions.Item>
               </Descriptions>
             ) : (
@@ -823,6 +899,21 @@ export default function Console() {
             </div>
           ))}
         </div>
+      </Modal>
+      <Modal
+        title="更新节点别名"
+        open={updateNodeAliasVisible}
+        onOk={handleUpdateNodeAliasOk}
+        onCancel={() => setUpdateNodeAliasVisible(false)}
+      >
+        <Form form={updateNodeAliasForm} layout="vertical">
+          <Form.Item name="host" label="主机地址">
+            <Input disabled style={{width:'100%'}} value={updateNodeAliasForm.getFieldValue("host")} />
+          </Form.Item>
+          <Form.Item name="alias" label="别名" rules={[{ required: true, message: '请输入别名' }]}>
+            <Input style={{width:'100%'}} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

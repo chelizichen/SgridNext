@@ -119,17 +119,19 @@ func CreatePackage(ctx *gin.Context) {
 func GetServerPackageList(ctx *gin.Context) {
 	var req struct {
 		ServerId int `json:"id"`
+		Offset int `json:"offset"`
+		Size int `json:"size"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	packages, err := mapper.T_Mapper.GetServerPackageList(req.ServerId)
+	packages, total, err := mapper.T_Mapper.GetServerPackageList(req.ServerId, req.Offset, req.Size)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务包列表失败", "error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": packages})
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": packages,"total":total})
 }
 
 func CreateServerNode(ctx *gin.Context) {

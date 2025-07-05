@@ -64,6 +64,15 @@ func (t *T_PatchServer_Mapper) UpdateMachineNodeStatus(id int, status int) error
 	return err
 }
 
+func (t *T_PatchServer_Mapper) UpdateMachineNodeAlias(id int, alias string) error {
+	err := t.db.Debug().
+		Model(&entity.Node{}).
+		Where("id = ?", id).
+		Update("alias", alias).
+		Error
+	return err
+}
+
 func (t *T_PatchServer_Mapper) UpdateNodePatch(ids []int, patchId int) error {
 	logger.Mapper.Info("更新服务节点：", ids, patchId)
 	if len(ids) == 0 {
@@ -182,6 +191,7 @@ type ServerNodesVo struct {
 	AdditionalArgs   string  `json:"additional_args"`
 	ServerId 		 int     `json:"server_id"`
 	ViewPage 		 string  `json:"view_page"`
+	Alias 			 string  `json:"alias"`
 }
 
 func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]ServerNodesVo, error) {
@@ -213,7 +223,8 @@ func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]Serve
 		server_nodes.view_page as view_page,
 		nodes.host as host,
 		server_node_limits.cpu_limit as cpu_limit,
-		server_node_limits.memory_limit as memory_limit
+		server_node_limits.memory_limit as memory_limit,
+		nodes.alias as alias
 	FROM server_nodes
 	LEFT JOIN 
 		nodes ON server_nodes.node_id = nodes.id
@@ -231,11 +242,26 @@ func (t *T_PatchServer_Mapper) GetNodeList() ([]entity.Node, error) {
 	return nodes, res.Error
 }
 
-func (t *T_PatchServer_Mapper) GetServerPackageList(id int) ([]entity.ServerPackage, error) {
+func (t *T_PatchServer_Mapper) UpdateNodeUpdateTime(id int) error {
+	err := t.db.Debug().
+		Model(&entity.Node{}).
+		Where("id = ?", id).
+		Update("update_time", constant.GetCurrentTime()).
+		Error
+	return err
+}
+func (t *T_PatchServer_Mapper) GetServerPackageList(id int, offset int, size int) ([]entity.ServerPackage, int64, error) {
 	var packages []entity.ServerPackage
+	var total int64
 	// 根据id 倒叙
-	res := t.db.Debug().Order("id desc").Where("server_id =?", id).Find(&packages)
-	return packages, res.Error
+	res := t.db.Debug().Model(&entity.ServerPackage{}).
+		Where("server_id = ?", id).
+		Count(&total).
+		Order("id desc").
+		Offset(offset).
+		Limit(size).
+		Find(&packages)
+	return packages, total, res.Error
 }
 
 func (t *T_PatchServer_Mapper) GetServerPackageInfo(id int) (entity.ServerPackage, error) {

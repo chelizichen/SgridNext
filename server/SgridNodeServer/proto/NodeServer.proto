@@ -49,7 +49,7 @@ message CheckStatReq{
 message DownloadFileRequest{
     string fileName = 1;
     int32 serverId = 2; // 服务ID
-    int32 type = 3; // 1 下载日志文件
+    int32 type = 3; // 见 constant.go 的映射
 }
 
 message DownloadFileResponse{

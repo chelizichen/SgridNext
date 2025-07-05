@@ -33,6 +33,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/createNode", handlers.CreateNode)
 	// 更新机器节点
 	group.POST("/server/updateNode", handlers.UpdateMachineNode)
+	// 更新节点别名
+	group.POST("/server/updateNodeAlias", handlers.UpdateMachineNodeAlias)
 	// 部署服务
 	group.POST("/server/deployServer", handlers.DeployServer)
 	// 停止服务
