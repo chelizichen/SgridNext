@@ -33,6 +33,9 @@ export default function ServerModal({ visible, onOk, onCancel, form, groupOption
                     <Form.Item name="serverName" label="服务名称" rules={[{ required: true, message: '请输入服务名称' }]}> 
                         <Input style={{width:'100%'}} /> 
                     </Form.Item>
+                    <Form.Item name="dockerName" label="docker名称" rules={[{ required: false, message: '请输入docker名称' }]}> 
+                        <Input style={{width:'100%'}} /> 
+                    </Form.Item>
                     <Form.Item name="groupId" label="所属服务组" rules={[{ required: true, message: '请选择所属服务组' }]}> 
                         <Select options={groupOptions} style={{width:'100%'}} placeholder="请选择服务组" /> 
                     </Form.Item>

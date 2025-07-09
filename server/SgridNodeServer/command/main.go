@@ -9,6 +9,7 @@ import (
 	"sync"
 	"syscall"
 
+	"sgridnext.com/server/SgridNodeServer/util"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/logger"
 )
@@ -25,6 +26,7 @@ type Command struct {
 	serverId int
 	additionalArgs string
 	serverRunType int
+	dockerName string
 }
 
 
@@ -118,6 +120,14 @@ func (c *Command) SetRunServerType(t int)  {
 	 c.serverRunType = t
 }
 
+func (c *Command) SetDockerName(dockerName string) {
+	c.dockerName = dockerName
+}
+
+func (c *Command) GetDockerName() string {
+	return c.dockerName
+}
+
 func (c *Command) SetCommand(cmd string, args ...string) error {
 	logger.CMD.Infof("s.cmd: %s | args: %s \n", cmd, args)
 	cwd, _ := os.Getwd()
@@ -184,9 +194,18 @@ func (c *Command) Start() error {
 	return nil
 }
 
+
 func (c *Command) Stop() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if c.GetDockerName() != "" {
+		err := util.DockerStop(c.GetDockerName())
+		if err != nil {
+			logger.CMD.Errorf("停止docker失败: %v", err)
+			return err
+		}
+		return nil
+	}
 	if c.cmd == nil || c.cmd.Process == nil {
 		logger.CMD.Infof("command not initialized")
 		// 进程未启动，直接返回nil
@@ -220,6 +239,10 @@ func (c *Command) Stop() error {
 }
 
 func (c *Command) CheckStat() (pid int, alive bool, err error) {
+	if c.GetDockerName() != "" {
+		alive, err = util.DockerGetAlive(c.GetDockerName())
+		return 0, alive, err
+	}
 	// if c.cmd == nil || c.cmd.Process == nil {
 	// 	return 0, false, fmt.Errorf("command not initialized")
 	// }

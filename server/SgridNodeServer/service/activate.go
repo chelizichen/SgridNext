@@ -32,7 +32,7 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 	execPath := serverInfo.ExecFilePath
 	serverName := serverInfo.ServerName
 	serverType := serverInfo.ServerType
-
+	dockerName := serverInfo.DockerName
 	// 拉取配置文件
 	err = api.GetConfigList(api.GetConfigListReq{
 		ServerId: serverId,
@@ -121,6 +121,7 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 			AdditionalArgs: node.AdditionalArgs,
 			ServerRunType:  node.ServerRunType,
 			ServerId:       serverId,
+			DockerName: 	dockerName,
 		}
 		logger.Server.Infof("DeployServer | patchServerInfo | %v", patchServerInfo)
 		cmd, err := patchServerInfo.CreateCommand()

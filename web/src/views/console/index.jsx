@@ -264,6 +264,7 @@ export default function Console() {
         desc: data.data.Description,
         create_time: data.data.CreateTime,
         log_path: data.data.LogPath,
+        docker_name: data.data.DockerName,
       });
     });
     getServerNodes({ id: serverId }).then((res) => {
@@ -468,17 +469,17 @@ export default function Console() {
     # 执行 sgridnext 从 当前目录寻找 sgridnext.release 文件, 读取配置项, 进行发布
 
     # 发布地址
-    DEPLOY_PATH = "${apiPath}"
+    DEPLOY_PATH = ${apiPath}
     
     # 服务ID
     SERVER_ID = ${serverInfo.server_id}
     
     # 服务名
-    SERVER_NAME = "${serverInfo.server_name}"
+    SERVER_NAME = ${serverInfo.server_name}
 
     # 包地址 此项需要手动填写
     # 例如：/archive/SgridTestJavaServer.tar.gz
-    PACKAGE_PATH = "/archive/${serverInfo.server_name}.tar.gz"
+    PACKAGE_PATH = /archive/${serverInfo.server_name}.tar.gz
 
     `
     let blob = new Blob([content], { type: "text/plain" });
@@ -641,6 +642,9 @@ export default function Console() {
               <Descriptions>
                 <Descriptions.Item label="服务名">
                   {serverInfo.server_name}
+                </Descriptions.Item>
+                <Descriptions.Item label="docker名称">
+                  {serverInfo.docker_name}
                 </Descriptions.Item>
                 <Descriptions.Item label="服务号">
                   {serverInfo.server_id}

@@ -16,6 +16,7 @@ type ServerInfo struct {
 	AdditionalArgs string
 	ServerRunType int
 	ServerId int
+	DockerName string
 }
 
 func (s *ServerInfo) CreateCommand() (*Command, error) {
@@ -42,5 +43,6 @@ func (s *ServerInfo) CreateCommand() (*Command, error) {
 	cmd.SetServerId(s.ServerId)
 	cmd.SetAdditionalArgs(s.AdditionalArgs)
 	cmd.SetRunServerType(s.ServerRunType)
+	cmd.SetDockerName(s.DockerName)
 	return cmd, nil
 }
