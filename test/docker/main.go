@@ -1,13 +1,14 @@
-package util
+package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
-
-	"sgridnext.com/src/logger"
 )
 
+// GOOS=linux GOARCH=amd64 go build -o docker_alive
+// docker ps --filter name=gk-collector | grep gk-collector
 func DockerGetAlive(dockerName string) (bool, error) {
 	fmt.Printf("check docker alive: %s \n", dockerName)
 
@@ -33,13 +34,11 @@ func DockerGetAlive(dockerName string) (bool, error) {
 	return false, nil
 }
 
-func DockerStop(dockerName string) error {
-	cmd := exec.Command("docker", "stop", dockerName)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logger.Server.Errorf("docker stop error: %v", err)
-		return err
+func main() {
+	// 名称通过参数传递
+	if len(os.Args) < 2 {
+		fmt.Println("请输入容器名称")
+		return
 	}
-	logger.Server.Infof("docker stop output: %s", string(output))
-	return nil
+	DockerGetAlive(os.Args[1])
 }

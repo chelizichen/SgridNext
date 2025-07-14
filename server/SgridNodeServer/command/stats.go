@@ -17,6 +17,7 @@ type SvrNodeStat struct {
 	ServerPort int    `json:"port,omitempty"`        // 主机端口
 	MachineId  int    `json:"machine_id,omitempty"`  // 机器ID
 	ServerId   int    `json:"server_id,omitempty"`   // 服务ID
+	DockerName string `json:"docker_name,omitempty"` // 容器名称
 }
 
 
@@ -111,6 +112,7 @@ func (cm *centerManager) SyncStat(createTime string) {
 			ServerHost: cmd.GetHost(),
 			ServerPort: cmd.GetPort(),
 			ServerId: 	cmd.GetServerId(),
+			DockerName: cmd.GetDockerName(),
 		}
 		statMap.StatList = append(statMap.StatList, sns)
 	}

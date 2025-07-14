@@ -239,6 +239,7 @@ func (c *Command) Stop() error {
 }
 
 func (c *Command) CheckStat() (pid int, alive bool, err error) {
+	logger.CMD.Info("check stat dockerName: ",c.GetDockerName(), " serverName: ",c.GetServerName())
 	if c.GetDockerName() != "" {
 		alive, err = util.DockerGetAlive(c.GetDockerName())
 		return 0, alive, err
