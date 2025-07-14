@@ -66,3 +66,9 @@ const (
 	DB_TYPE_MYSQL    = "mysql"
 	DB_TYPE_POSTGRES = "postgres"
 )
+
+
+const (
+	MSG_CALL_SIZE_MAX = 20 * 1024 * 1024
+	MSG_RECV_SIZE_MAX = 20 * 1024 * 1024
+)

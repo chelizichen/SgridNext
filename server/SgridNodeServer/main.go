@@ -53,6 +53,8 @@ func main() {
 			Time:    5 * time.Second,
 			Timeout: 1 * time.Second,
 		}),
+		grpc.MaxRecvMsgSize(constant.MSG_RECV_SIZE_MAX),
+		grpc.MaxSendMsgSize(constant.MSG_CALL_SIZE_MAX),
 	)
 	srv := grpc.NewServer(opts...)
 	protocol.RegisterNodeServantServer(srv, &service.NodeServer{})

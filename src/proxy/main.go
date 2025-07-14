@@ -159,6 +159,8 @@ func LoadProxy() {
 							grpc.WithTransportCredentials(
 								insecure.NewCredentials(),
 							),
+							grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(constant.MSG_RECV_SIZE_MAX)),
+							grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(constant.MSG_CALL_SIZE_MAX)),
 						)
 						if err != nil {
 							mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_OFFLINE)
