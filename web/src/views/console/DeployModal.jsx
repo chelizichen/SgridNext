@@ -252,7 +252,8 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
                       title: 'Hash',
                       dataIndex: 'Hash',
                       key: 'Hash',
-                      width: 200,
+                      width: 100,
+                      ellipsis: true,
                     },
                     {
                       title: '创建时间',
@@ -264,6 +265,7 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
                       title: 'Commit',
                       dataIndex: 'Commit',
                       key: 'Commit',
+                      width: 200,
                       ellipsis: true,
                     },
                     {
