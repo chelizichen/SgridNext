@@ -1,6 +1,6 @@
 import logger from "../components/logger/main";
-import RouterManager from "../client/views/router";
-import ApiRouterManager from "./router";
+import RouterManager from "./clientManager";
+import ApiRouterManager from "./apiManager";
 
 // 获取路由管理器实例
 const routerManager = RouterManager.getInstance();

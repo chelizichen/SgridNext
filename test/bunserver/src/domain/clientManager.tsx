@@ -1,13 +1,12 @@
 import React from 'react';
 import { renderToString } from "react-dom/server";
-import logger from "../../../components/logger/main";
-import fs from 'fs'
+import logger from "../components/logger/main";
 // 导入所有页面组件
-import Bugs from "../bugs/bugView";
-import AdminView from "../admin/view";
+import Bugs from "../client/views/bugs/bugView";
+import AdminView from "../client/views/admin/view";
 
 // 导入所有服务
-import bugService from "../../../domain/bugs/bugService";
+import bugService from "./bugs/bugService";
 
 // 页面组件类型定义
 interface PageComponent {
