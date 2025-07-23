@@ -42,7 +42,28 @@ const LogView = () => {
           serverId : Number(serverId),
           nodeId:Number(nodeId)
         })
-        setFiles(res.data.map(file => ({ key: file, name: file })));
+        
+        // 添加排序逻辑
+        const sortedFiles = res.data.sort((a, b) => {
+          // 提取文件名中的日期部分
+          const dateRegex = /\.(\d{4}-\d{2}-\d{2})\.log$/;
+          const dateA = a.match(dateRegex);
+          const dateB = b.match(dateRegex);
+          
+          // 如果A没有日期，B有日期，A排在前面
+          if (!dateA && dateB) return -1;
+          // 如果A有日期，B没有日期，B排在前面
+          if (dateA && !dateB) return 1;
+          // 如果都没有日期，按文件名字母顺序
+          if (!dateA && !dateB) return a.localeCompare(b);
+          
+          // 如果都有日期，按日期倒序（新的在前）
+          const dateStrA = dateA[1];
+          const dateStrB = dateB[1];
+          return dateStrB.localeCompare(dateStrA);
+        });
+        
+        setFiles(sortedFiles.map(file => ({ key: file, name: file })));
         setLoading(false);
       });
     }
