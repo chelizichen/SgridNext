@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"sgridnext.com/src/config"
 	"sgridnext.com/src/db"
@@ -21,6 +22,9 @@ func main() {
 	proxy.LoadProxy()
 	// 初始化路由
 	engine := gin.Default()
+	if conf.Get("pprof") == "enable" {
+		pprof.Register(engine)
+	}
 	routes.LoadRoutes(engine)
 	addr := fmt.Sprintf("%s:%s", conf.Get("httpHost"), conf.Get("httpPort"))
 	err = engine.Run(addr)

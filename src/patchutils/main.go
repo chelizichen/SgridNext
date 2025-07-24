@@ -110,6 +110,15 @@ func (p *pathUtils) CalcPackageHash(file *multipart.FileHeader) (string, error) 
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
+func (p *pathUtils) CalcPackageHashFromReader(reader io.Reader) (string, error) {
+	hash := sha256.New()
+	_, err := io.Copy(hash, reader)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
 // 重命名包
 func (p *pathUtils) RenamePackage(oldPath string, newPath string) error {
 	return os.Rename(oldPath, newPath)

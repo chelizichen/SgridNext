@@ -58,19 +58,33 @@ func CreateServer(ctx *gin.Context) {
 func CreatePackage(ctx *gin.Context) {
 	cwd, _ := os.Getwd()
 	file, err := ctx.FormFile("file")
-	serverName := ctx.PostForm("serverName")
-	commit := ctx.PostForm("commit")
-	serverId, _ := strconv.Atoi(ctx.PostForm("serverId")) // 转成 int
-	logger.Server.Infof("serverName | %s | commit | %s", serverName, commit)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "文件上传失败", "error": err.Error()})
 		return
 	}
-	hash, err := patchutils.T_PatchUtils.CalcPackageHash(file)
+	serverName := ctx.PostForm("serverName")
+	commit := ctx.PostForm("commit")
+	serverId, _ := strconv.Atoi(ctx.PostForm("serverId")) // 转成 int
+	logger.Server.Infof("serverName | %s | commit | %s", serverName, commit)
+	defer func() {
+		if ctx.Request.MultipartForm != nil {
+			ctx.Request.MultipartForm.RemoveAll()
+		}
+	}()
+
+	src, err := file.Open()
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "打开文件失败", "error": err.Error()})
+		return
+	}
+	defer src.Close()
+	
+	hash, err := patchutils.T_PatchUtils.CalcPackageHashFromReader(src)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "计算文件hash失败", "error": err.Error()})
 		return
 	}
+
 	storePath := filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, serverName, file.Filename)
 	ctx.SaveUploadedFile(file, storePath)
 	newFileName, err := patchutils.T_PatchUtils.RenamePackageWithHash(storePath, hash)
@@ -98,20 +112,20 @@ func CreatePackage(ctx *gin.Context) {
 		Content:    fmt.Sprintf("已部署服务包 %s | 版本号 %d", serverName, rsp),
 	})
 
-	go func ()  {
-		// 全量调用
-		proxy.ProxyMap.FullDispatch(func(nsc *protocol.NodeServantClient) error {
-			_,err := (*nsc).SyncServicePackage(context.Background(),&protocol.SyncReq{
-				FileName: newFileName,
-				Type: constant.FILE_TYPE_PACKAGE,
-				ServerId: int32(serverId),
-			})
-			if err  != nil{
-				logger.RPC.Infof("调用失败 | SyncServicePackage | err | %s",err.Error())
-			}
-			return err
-		})	
-	}()
+	// go func (newFileName string,serverId int)  {
+	// 	// 全量调用
+	// 	proxy.ProxyMap.FullDispatch(func(nsc *protocol.NodeServantClient) error {
+	// 		_,err := (*nsc).SyncServicePackage(context.Background(),&protocol.SyncReq{
+	// 			FileName: newFileName,
+	// 			Type: constant.FILE_TYPE_PACKAGE,
+	// 			ServerId: int32(serverId),
+	// 		})
+	// 		if err  != nil{
+	// 			logger.RPC.Infof("调用失败 | SyncServicePackage | err | %s",err.Error())
+	// 		}
+	// 		return err
+	// 	})	
+	// }(newFileName,serverId)
 
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "创建服务包成功", "hash": hash})
 }
