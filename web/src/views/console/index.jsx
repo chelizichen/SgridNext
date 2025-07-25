@@ -304,10 +304,14 @@ export default function Console() {
       }
     });
   }
+
+  const [serverIdToGroupMap, setServerIdToGroupMap] = useState({});
+
   function initServerTreeData() {
     getServerList().then((data) => {
       console.log("data", data);
       let serverGroup = _.groupBy(data.data, "group_name");
+      setServerIdToGroupMap(_.keyBy(data.data, "server_id"))
       let treeStructure = Object.keys(serverGroup).map((groupName) => ({
         title: groupName,
         key: groupName,
@@ -642,6 +646,9 @@ export default function Console() {
               <Descriptions>
                 <Descriptions.Item label="服务名">
                   {serverInfo.server_name}
+                </Descriptions.Item>
+                <Descriptions.Item label="服务组">
+                  {serverIdToGroupMap[serverInfo.server_id]?.group_name} 
                 </Descriptions.Item>
                 <Descriptions.Item label="docker名称">
                   {serverInfo.docker_name}

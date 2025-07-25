@@ -21,10 +21,12 @@ func DockerGetAlive(dockerName string) (bool, error) {
 	// 检查输出中是否包含目标容器名称
 	outputStr := string(output)
 	names := strings.Split(outputStr, "\n")
+	fmt.Println("names: ", names)
 	dockerName = strings.Replace(dockerName, "'", "", -1)
 	for _, name := range names {
 		name = strings.Replace(name, "'", "", -1)
 		if name == dockerName {
+			fmt.Println("matched : ", name, "dockerName: ", dockerName)
 			return true, nil
 		} else {
 			fmt.Println("not match: ", name, "dockerName: ", dockerName)

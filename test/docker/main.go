@@ -23,9 +23,12 @@ func DockerGetAlive(dockerName string) (bool, error) {
 	outputStr := string(output)
 	names := strings.Split(outputStr, "\n")
 	dockerName = strings.Replace(dockerName, "'", "", -1)
+	fmt.Println("names: ", names)
 	for _, name := range names {
+		fmt.Println("name: ", name)
 		name = strings.Replace(name, "'", "", -1)
 		if name == dockerName {
+			fmt.Println("matched : ", name, "dockerName: ", dockerName)
 			return true, nil
 		} else {
 			fmt.Println("not match: ", name, "dockerName: ", dockerName)
