@@ -23,7 +23,7 @@ func CreateLogger(logName string) *logrus.Logger {
 	if envDir != "" {
 		logDir = envDir
 	}else {
-		return logger
+		// return logger
 	}
 
 	logPath := filepath.Join(logDir, fmt.Sprintf("%s.log", logName))

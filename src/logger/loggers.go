@@ -12,3 +12,5 @@ var Config = CreateLogger("config")
 var Alive = CreateLogger("alive")
 
 var RPC = CreateLogger("rpc")
+
+var Docker = CreateLogger("docker")
