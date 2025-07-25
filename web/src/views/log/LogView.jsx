@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Button, Card, Col, Input, Row, Select, Table, Typography } from 'antd';
+import { Button, Card, Col, Input, Row, Select, Table, Typography, Radio, Checkbox } from 'antd';
 import { DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { downloadFile, getFileList, getLog } from '../console/api';
 import { _constant } from '../../common/constant';
@@ -14,6 +14,10 @@ const LogView = () => {
   const [selectedFile, setSelectedFile] = useState('');
   const [logContent, setLogContent] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [logOrder, setLogOrder] = useState(2); // 1: 从下到上(倒序), 2: 从上到下(正序)
+  const [autoRefresh, setAutoRefresh] = useState(false); // 自动刷新开关
+  const [refreshInterval, setRefreshInterval] = useState(5); // 刷新间隔（秒）
+  const intervalRef = useRef(null); // 定时器引用
   const [previewParams, setPreviewParams] = useState({
     serverName: '',
     serverId: 0,
@@ -69,6 +73,30 @@ const LogView = () => {
     }
   }, [location.search]);
 
+  // 自动刷新效果
+  useEffect(() => {
+    if (autoRefresh && selectedFile) {
+      // 启动定时器
+      intervalRef.current = setInterval(() => {
+        handlePreview(true); // 传入true表示是自动刷新
+      }, refreshInterval * 1000);
+    } else {
+      // 清除定时器
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    // 清理函数
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [autoRefresh, selectedFile, refreshInterval, previewParams]);
+
   const handleDownload = () => {
     if (selectedFile) {
       downloadFile({
@@ -81,9 +109,12 @@ const LogView = () => {
     }
   };
 
-  const handlePreview = () => {
+  const handlePreview = (isAutoRefresh = false) => {
     if (selectedFile) {
-      setLoading(true);
+      // 如果是自动刷新，不显示loading状态
+      if (!isAutoRefresh) {
+        setLoading(true);
+      }
       let keyword = previewParams.keyword
       if(!keyword){
         keyword = `''`
@@ -94,9 +125,44 @@ const LogView = () => {
         keyword:keyword,
       }).then(res => {
         setLogContent(res.data || []);
-        setLoading(false);
+        if (!isAutoRefresh) {
+          setLoading(false);
+        }
+      }).catch(err => {
+        console.error('获取日志失败:', err);
+        if (!isAutoRefresh) {
+          setLoading(false);
+        }
       });
     }
+  };
+
+  // 处理日志顺序变化
+  const handleLogOrderChange = (e) => {
+    setLogOrder(e.target.value);
+  };
+
+  // 处理自动刷新开关变化
+  const handleAutoRefreshChange = (e) => {
+    setAutoRefresh(e.target.checked);
+  };
+
+  // 处理刷新间隔变化
+  const handleRefreshIntervalChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (value > 0) {
+      setRefreshInterval(value);
+    }
+  };
+
+  // 根据选择的顺序显示日志内容
+  const getDisplayLogContent = () => {
+    if (logOrder === 1) {
+      // 从下到上（倒序）
+      return [...logContent].reverse();
+    }
+    // 从上到下（正序）
+    return logContent;
   };
 
   const columns = [
@@ -142,8 +208,8 @@ const LogView = () => {
         </Col>
         <Col span={20}>
           <Card title="日志预览" bordered={false}>
-            <Row gutter={16} style={{ marginBottom: '16px' }}>
-              <Col span={4}>
+            <Row gutter={24} style={{ marginBottom: '16px' }}>
+              <Col span={3}>
                 <Text>行数</Text>
                 <Input 
                   type="number" 
@@ -151,7 +217,7 @@ const LogView = () => {
                   onChange={(e) => setPreviewParams({...previewParams, len: parseInt(e.target.value)})}
                 />
               </Col>
-              <Col span={4}>
+              <Col span={3}>
                 <Text>类型</Text>
                 <Select 
                   style={{ width: '100%' }}
@@ -162,27 +228,49 @@ const LogView = () => {
                   <Option value={2}>tail</Option>
                 </Select>
               </Col>
-              <Col span={8}>
+              <Col span={4}>
                 <Text>关键字</Text>
                 <Input 
                   value={previewParams.keyword}
                   onChange={(e) => setPreviewParams({...previewParams, keyword: e.target.value})}
                 />
               </Col>
-              <Col span={4}>
+              <Col span={2}>
                 <Button 
                   type="primary" 
                   icon={<SearchOutlined />} 
-                  onClick={handlePreview}
+                  onClick={() => handlePreview()}
                   loading={loading}
                   style={{ marginTop: '24px' }}
                 >
                   预览
                 </Button>
               </Col>
+              <Col span={4}>
+                <Text>显示顺序</Text>
+                <Radio.Group 
+                  value={logOrder} 
+                  onChange={handleLogOrderChange}
+                  style={{ marginTop: '8px' }}
+                >
+                  <Radio value={1}>从下到上</Radio>
+                  <Radio value={2}>从上到下</Radio>
+                </Radio.Group>
+              </Col>
+              <Col span={6}>
+                <Text>自动刷新</Text>
+                <div style={{ marginTop: '8px' }}>
+                  <Checkbox 
+                    checked={autoRefresh}
+                    onChange={handleAutoRefreshChange}
+                  >
+                    启用自动刷新（5秒间隔）
+                  </Checkbox>
+                </div>
+              </Col>
             </Row>
               <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word',background: 'black',color: 'white',padding: '10px',minHeight:'500px' }}>
-                {logContent.map((v,i)=>{
+                {getDisplayLogContent().map((v,i)=>{  
                   return <p key={i}>{i} {v}</p>
                 })}
               </pre>
