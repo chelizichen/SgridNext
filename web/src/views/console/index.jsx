@@ -58,10 +58,6 @@ function conversionConf(files) {
   return result;
 }
 
-
-
-
-
 export default function Console() {
   // 检测是否为移动设备
   const isMobile = useMediaQuery({ maxWidth: 1000 });
@@ -89,7 +85,13 @@ export default function Console() {
         </div>
       )
     } },
-    { title: "主机地址", dataIndex: "Host", key: "Host" },
+    { title: "主机地址", dataIndex: "Host", key: "Host" ,render:(text,record)=>{
+      return (
+        <div style={{width:"120px",cursor:'pointer',color:'#1677ff'}} onClick={()=>toApplicationLog(record.Host,3)}>
+          {record.Host}
+        </div>
+      )
+    }},
     {
       title: "状态",
       key: "NodeStatus",
@@ -198,7 +200,16 @@ export default function Console() {
   ];
 
   function toLogPage(record,serverName,serverId){
-    let new_path = `/log?host=${record.host}&serverId=${serverId}&serverName=${serverName}&nodeId=${record.id}`
+    let new_path = `/log?host=${record.host}&serverId=${serverId}&serverName=${serverName}&nodeId=${record.id}&logCategory=1`
+    let newPath = location.pathname + "/#" + new_path
+    window.open(newPath,"_blank")
+  }
+
+  function toApplicationLog(host,type){
+    if(type == 2){
+      host = 'sgridnext'
+    }
+    let new_path = `/log?host=${host}&logCategory=${type}&serverId=-25528`
     let newPath = location.pathname + "/#" + new_path
     window.open(newPath,"_blank")
   }
@@ -608,6 +619,9 @@ export default function Console() {
                     isMobile ? { display: "flex", flexDirection: "column" } : {}
                   }
                 >
+                  <Button onClick={()=>toApplicationLog('',2)}>
+                    主控
+                  </Button>
                   <Button
                     onClick={initServersAndNodes}
                     style={{ marginBottom: isMobile ? "8px" : 0 }}

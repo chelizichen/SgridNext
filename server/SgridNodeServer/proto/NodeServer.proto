@@ -62,6 +62,7 @@ message DownloadFileResponse{
 message GetFileListReq{
     int32 serverId = 1; // 节点id
     int32 type = 2; // 1 日志
+    int32 logCategory = 3; // 日志分类
 }
 
 message GetFileListResponse{
@@ -83,6 +84,7 @@ message GetLogReq{
     string keyword = 4;
     int32 len = 5;
     int32 serverId = 6;
+    int32 logCategory = 7; // 日志分类
 }
 
 message GetLogRes{

@@ -7,6 +7,11 @@ import { _constant } from '../../common/constant';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const LOG_CATEGORIES = {
+  BUSINESS: 1, // 业务日志
+  MASTER: 2,   // 主控日志
+  NODE: 3      // 节点日志
+};
 
 const LogView = () => {
   const location = useLocation();
@@ -26,7 +31,8 @@ const LogView = () => {
     keyword: '',
     host: '',
     logType: 1,
-    fileName: ''
+    fileName: '',
+    logCategory: LOG_CATEGORIES.BUSINESS // 新增日志分类参数
   });
 
   useEffect(() => {
@@ -35,16 +41,23 @@ const LogView = () => {
     const serverId = params.get('serverId');
     const serverName = params.get('serverName');
     const nodeId = params.get('nodeId');
+    const logCategory = params.get('logCategory');
     if (host && serverId) {
       setLoading(true);
-      getFileList({ host, serverId : Number(serverId),type:_constant.FILE_TYPE_LOG }).then(res => {
+      getFileList({ 
+        host, 
+        serverId : Number(serverId),
+        type:_constant.FILE_TYPE_LOG,
+        logCategory: Number(logCategory)
+      }).then(res => {
         console.log('res',res);
         setPreviewParams({
           ...previewParams,
           host,
-          serverName,
+          serverName:serverName || '',
           serverId : Number(serverId),
-          nodeId:Number(nodeId)
+          nodeId:Number(nodeId),
+          logCategory:Number(logCategory)
         })
         
         // 添加排序逻辑

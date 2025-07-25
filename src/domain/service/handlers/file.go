@@ -135,19 +135,51 @@ func GetFileList(ctx *gin.Context) {
 		ServerId int    `json:"serverId"`
 		Type     int    `json:"type"`
 		Host     string `json:"host"`
+		LogCategory  int    `json:"logCategory"` // 新增日志类型参数
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
 	logger.App.Info("GetFileList %v", req)
+	
+	// 如果是主控日志，直接在本地处理
+	if req.Type == constant.FILE_TYPE_LOG && req.LogCategory == constant.LOG_TYPE_MASTER {
+		cwd, _ := os.Getwd()
+		masterLogDir := filepath.Join(cwd, "logs")
+		
+		// 如果目录不存在，创建它
+		if _, err := os.Stat(masterLogDir); os.IsNotExist(err) {
+			os.MkdirAll(masterLogDir, 0755)
+		}
+		
+		files, err := os.ReadDir(masterLogDir)
+		if err != nil {
+			logger.App.Errorf("读取主控日志目录失败 %s", err.Error())
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "读取主控日志目录失败"})
+			return
+		}
+		
+		fileList := make([]string, 0)
+		for _, file := range files {
+			if !file.IsDir() {
+				fileList = append(fileList, file.Name())
+			}
+		}
+		
+		ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "获取主控日志文件列表成功", "data": fileList})
+		return
+	}
+	
+	// 业务日志和节点日志通过RPC调用节点服务获取
 	proxy.ProxyMap.DispatchByHost(req.Host, func(client *protocol.NodeServantClient) error {
 		rsp, err := (*client).GetFileList(ctx, &protocol.GetFileListReq{
 			ServerId: int32(req.ServerId),
 			Type:     int32(req.Type),
+			LogCategory:  int32(req.LogCategory), // 传递日志类型
 		})
 		if err != nil {
-			logger.App.Errorf("获取文件列表失败 %s ", err.Error())
+			logger.App.Errorf("获取文件列表失败 %s", err.Error())
 			return err
 		}
 		ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "获取文件列表成功", "data": rsp.FileList})

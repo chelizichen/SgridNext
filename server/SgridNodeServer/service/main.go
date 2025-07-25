@@ -223,23 +223,36 @@ func (s *NodeServer) DownloadFile(in *protocol.DownloadFileRequest, stream proto
 }
 
 // 可以指定LogPath，兼容旧服务进行日志查询
+// 修改 GetFileList 方法
 func (s *NodeServer) GetFileList(ctx context.Context, in *protocol.GetFileListReq) (*protocol.GetFileListResponse, error) {
 	logger.App.Info("获取文件列表 %v ", in.String())
 	if in.Type == constant.FILE_TYPE_LOG {
-		serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
-		if err != nil {
-			return nil, err
+		// 根据日志类型决定读取哪个目录
+		var logDir string
+		
+		if in.LogCategory == constant.LOG_TYPE_NODE {
+			// 节点日志：读取当前工作目录下的logs目录
+			cwd, _ := os.Getwd()
+			logDir = filepath.Join(cwd, "logs")
+		} else {
+			// 业务日志：使用原有逻辑
+			serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
+			if err != nil {
+				return nil, err
+			}
+			logDir = util.GetLogDir(&serverInfo)
 		}
-		logDir := util.GetLogDir(&serverInfo)
+		
 		files, err := os.ReadDir(logDir)
 		if err != nil {
-			// 返回错误信息
 			logger.App.Errorf("读取目录失败 %s ", err.Error())
 			return nil, err
 		}
 		fileList := make([]string, 0)
 		for _, file := range files {
-			fileList = append(fileList, file.Name())
+			if !file.IsDir() {
+				fileList = append(fileList, file.Name())
+			}
 		}
 		logger.App.Info("获取到文件列表 %v", fileList)
 		return &protocol.GetFileListResponse{
@@ -251,14 +264,25 @@ func (s *NodeServer) GetFileList(ctx context.Context, in *protocol.GetFileListRe
 	return nil, nil
 }
 
-// 可以指定LogPath，兼容旧服务进行日志查询
+// 修改 GetLog 方法
 func (s *NodeServer) GetLog(ctx context.Context, in *protocol.GetLogReq) (*protocol.GetLogRes, error) {
 	logger.App.Info("获取日志 %v ", in.String())
-	serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
-	if err != nil {
-		return nil, err
+	
+	var logPath string
+	
+	if in.LogCategory == constant.LOG_TYPE_NODE {
+		// 节点日志：直接从当前工作目录下的logs目录读取
+		cwd, _ := os.Getwd()
+		logPath = filepath.Join(cwd, "logs", in.FileName)
+	} else {
+		// 业务日志：使用原有逻辑
+		serverInfo, err := mapper.T_Mapper.GetServerInfo(int(in.ServerId))
+		if err != nil {
+			return nil, err
+		}
+		logPath = util.GetLogPath(&serverInfo, in.FileName)
 	}
-	logPath := util.GetLogPath(&serverInfo, in.FileName)
+	
 	rsp, err := QueryLog(logPath, in.LogType, in.Keyword, in.Len)
 	if err != nil {
 		return nil, err

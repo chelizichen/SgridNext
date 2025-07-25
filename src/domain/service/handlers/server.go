@@ -395,11 +395,31 @@ func GetLog(ctx *gin.Context){
 		Host string `json:"host"`
 		LogType int `json:"logType"`
 		FileName string `json:"fileName"`
+		LogCategory int `json:"logCategory"` // 新增：日志分类（业务/主控/节点）
 	}
 	if err := ctx.ShouldBindJSON(&req); err!= nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
+	
+	// 如果是主控日志，直接在本地处理
+	if req.LogCategory == constant.LOG_TYPE_MASTER {
+		cwd, _ := os.Getwd()
+		masterLogPath := filepath.Join(cwd, "logs", req.FileName)
+		
+		// 使用本地日志查询函数
+		logContent, err := constant.QueryLog(masterLogPath, int32(req.LogType), req.Keyword, int32(req.Len))
+		if err != nil {
+			logger.App.Errorf("查询主控日志失败 %s", err.Error())
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "查询主控日志失败"})
+			return
+		}
+		
+		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": logContent})
+		return
+	}
+	
+	// 业务日志和节点日志通过RPC调用
 	proxy.ProxyMap.DispatchByHost(req.Host, func(client *protocol.NodeServantClient) error {
 		rsp, err := (*client).GetLog(context.Background(), &protocol.GetLogReq{
 			ServerName: req.ServerName,
@@ -408,6 +428,7 @@ func GetLog(ctx *gin.Context){
 			Keyword: req.Keyword,
 			LogType:int32(req.LogType),
 			FileName: req.FileName,
+			LogCategory: int32(req.LogCategory), // 传递日志分类
 		})
 		if err != nil{
 			logger.RPC.Infof("调用失败 | QueryLog | err | %s",err.Error())

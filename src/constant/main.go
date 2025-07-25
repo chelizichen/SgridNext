@@ -72,3 +72,11 @@ const (
 	MSG_CALL_SIZE_MAX = 20 * 1024 * 1024
 	MSG_RECV_SIZE_MAX = 20 * 1024 * 1024
 )
+
+
+// 日志类型定义
+const (
+	LOG_TYPE_BUSINESS = 1 // 业务日志
+	LOG_TYPE_MASTER   = 2 // 主控日志
+	LOG_TYPE_NODE     = 3 // 节点日志
+)
