@@ -35,13 +35,13 @@ func GetFile(req FileReq) error {
 	fmt.Printf("apiPath: %s \n", apiPath)
 	resp, err := client.Post(apiPath, "application/json", bytes.NewBuffer(req.ToJSON()))
 	if err != nil {
-		logger.App.Errorf("HTTP请求失败: %v", err)
+		logger.Package.Errorf("HTTP请求失败: %v", err)
 		return fmt.Errorf("HTTP请求失败: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logger.App.Errorf("接口返回错误状态码: %d", err)
+		logger.Package.Errorf("接口返回错误状态码: %d", err)
 		return fmt.Errorf("接口返回错误状态码: %d", resp.StatusCode)
 	}
 
@@ -56,24 +56,24 @@ func GetFile(req FileReq) error {
 	case constant.FILE_TYPE_CONFIG:
 		filePath = filepath.Join(cwd, constant.TARGET_CONF_DIR, serverName, req.FileName)
 	default:
-		logger.App.Errorf("未知的文件类型: %d", req.Type)
+		logger.Package.Errorf("未知的文件类型: %d", req.Type)
 		return fmt.Errorf("未知的文件类型: %d", req.Type)
 	}
-	fmt.Println("创建目录 | filePath", filePath)
+	logger.Package.Info("创建目录 | filePath", filePath)
 	if err = os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
-		logger.App.Errorf("创建目录失败: %v", err)
+		logger.Package.Errorf("创建目录失败: %v", err)
 		return fmt.Errorf("创建目录失败: %v", err)
 	}
-	fmt.Println("写入文件 | filePath", filePath)
+	logger.Package.Info("写入文件 | filePath", filePath)
 	outFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		logger.App.Errorf("创建文件失败: %v", err)
+		logger.Package.Errorf("创建文件失败: %v", err)
 		return fmt.Errorf("创建文件失败: %v", err)
 	}
 	defer outFile.Close()
 
 	if _, err := io.Copy(outFile, resp.Body); err != nil {
-		logger.App.Errorf("文件写入失败: %v", err)
+		logger.Package.Errorf("文件写入失败: %v", err)
 		return fmt.Errorf("文件写入失败: %v", err)
 	}
 	mapper.T_Mapper.SaveNodeStat(&entity.NodeStat{

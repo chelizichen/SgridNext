@@ -14,3 +14,5 @@ var Alive = CreateLogger("alive")
 var RPC = CreateLogger("rpc")
 
 var Docker = CreateLogger("docker")
+
+var Package = CreateLogger("package")

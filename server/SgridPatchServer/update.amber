@@ -1,0 +1,29 @@
+import {exit} from "std/env";
+
+main(args){
+    let node_dir = args[1]
+    echo "node_dir: {node_dir}"
+    
+    echo "update sgridnode"
+    echo "rm {node_dir}/sgridnode"
+    $ rm {node_dir}/sgridnode $ failed{
+        echo "rm {node_dir}/sgridnode failed"
+        exit(1)
+    }
+    echo "cp ./sgridnode {node_dir}"
+    $ cp ./sgridnode {node_dir} $ failed {
+        echo "cp ./sgridnode {node_dir} failed"
+        exit(1)
+    }
+    echo "chmod +x {node_dir}/sgridnode"
+    $ chmod +x {node_dir}/sgridnode $ failed{
+        echo "chmod +x {node_dir}/sgridnode failed"
+        exit(1)
+    }
+    echo "systemctl restart sgridnode"
+    $ systemctl restart sgridnode $ failed{
+        echo "systemctl restart sgridnode failed"
+        exit(1)
+    }
+    echo "update success"
+}

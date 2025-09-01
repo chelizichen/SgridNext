@@ -52,7 +52,7 @@ func runRestartCallback() {
 			ServerId: svrId,
 		})
 
-		code, errMsg := service.Acitvate(&protocol.ActivateReq{
+		code, errMsg := service.Activate(&protocol.ActivateReq{
 			ServerId:      int32(svrId),
 			ServerNodeIds: constant.ConvertToInt32Slice(svrNodeIds),
 		})

@@ -35,7 +35,7 @@ const (
 )
 
 const (
-	ACITVATE_DEPLOY  = 1
+	ACTIVATE_DEPLOY  = 1
 	ACTIVATE_RESTART = 2
 	ACTIVATE_STOP    = 3
 )

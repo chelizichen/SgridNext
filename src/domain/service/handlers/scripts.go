@@ -83,7 +83,7 @@ func DeployScripts(ctx *gin.Context) {
             ServerId: int32(serverId),
             PackageId: int32(id),
             ServerNodeIds: serverNodeIds,
-            Type: constant.ACITVATE_DEPLOY,
+            Type: constant.ACTIVATE_DEPLOY,
         })
         if err != nil {
             logger.Server.Errorf("DeployScripts | ActivateServant | %v", err)

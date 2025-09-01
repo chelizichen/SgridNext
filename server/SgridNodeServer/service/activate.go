@@ -16,9 +16,9 @@ import (
 	"sgridnext.com/src/patchutils"
 )
 
-func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
+func Activate(req *protocol.ActivateReq) (code int32, msg string) {
 	cwd, _ := os.Getwd()
-	needDeploy := req.Type == constant.ACITVATE_DEPLOY
+	needDeploy := req.Type == constant.ACTIVATE_DEPLOY
 	serverId := int(req.ServerId)
 	serverNodeIds := constant.ConvertToIntSlice(req.ServerNodeIds)
 	packageId := int(req.PackageId)
@@ -62,7 +62,7 @@ func Acitvate(req *protocol.ActivateReq) (code int32, msg string) {
 			}
 		}
 		serverDir := filepath.Join(constant.TARGET_SERVANT_DIR, serverName)
-		logger.Server.Infof("DeployServer | tarPath | %s | serverDir | %s", tarPath, serverDir)
+		logger.Package.Infof("DeployServer | tarPath | %s | serverDir | %s", tarPath, serverDir)
 		err = patchutils.T_PatchUtils.Tar2Dest(tarPath, serverDir)
 		if err != nil {
 			return CODE_FAIL, "解压服务包失败: " + err.Error()

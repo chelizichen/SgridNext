@@ -237,7 +237,7 @@ func DeployServer(ctx *gin.Context) {
 		rsp, err := (*client).ActivateServant(context.Background(), &protocol.ActivateReq{
 			ServerId:      int32(req.ServerId),
 			ServerNodeIds: constant.ConvertToInt32Slice(req.NodeIds),
-			Type:          constant.ACITVATE_DEPLOY,
+			Type:          constant.ACTIVATE_DEPLOY,
 			PackageId: 		int32(req.PackageId),
 		})
 		callRsp = append(callRsp, rsp)

@@ -88,7 +88,7 @@ func (s *NodeServer) SyncAllNodeStat(ctx context.Context, in *protocol.SyncStatR
 
 func (s *NodeServer) ActivateServant(ctx context.Context, in *protocol.ActivateReq) (*protocol.BasicRes, error) {
 	logger.App.Info("服务激活 %v ", in.String())
-	code, msg := Acitvate(in)
+	code, msg := Activate(in)
 	return &protocol.BasicRes{
 		Code: int32(code),
 		Msg:  msg,

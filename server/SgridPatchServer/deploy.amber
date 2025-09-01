@@ -1,0 +1,45 @@
+import {exit} from "std/env";
+
+main(args){
+    $ rm ./sgridnode $failed{
+        echo "rm ./sgridnode failed, ignore"
+        // exit(1)
+    }
+
+    $ rm ./sgridnode.tar.gz $failed{
+        echo "rm ./sgridnode.tar.gz failed, ignore"
+        // exit(1)
+    }
+
+    $ GOOS=linux GOARCH=amd64 go build -o update$failed{
+        echo "go build failed"
+        exit(1)
+    }
+
+    $ cd ../../$failed{
+        echo "cd ../../ failed"
+        exit(1)
+    }
+
+    $ sh deploy.sh $failed{
+        echo "sh deploy.sh failed"
+        exit(1)
+    }
+
+    $ cp ./archive/sgridnode/sgridnode ./server/SgridPatchServer $ failed{
+        echo "cp ./archive/sgridnode/sgridnode ./server/SgridPatchServer failed"
+        exit(1)
+    }
+    
+    $ cd server/SgridPatchServer $failed{
+        echo "cd server/SgridPatchServer failed"
+        exit(1)
+    }
+
+    $ tar -zcvf sgridnode.tar.gz ./* $failed{
+        echo "tar -zcvf sgridnode.tar.gz ./* failed"
+        exit(1)
+    }
+    echo "deploy success"
+    exit(0)
+}
