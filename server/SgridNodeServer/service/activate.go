@@ -16,152 +16,306 @@ import (
 	"sgridnext.com/src/patchutils"
 )
 
+// ActivateContext 激活上下文，包含激活过程中的所有必要信息
+type ActivateContext struct {
+	Req             *protocol.ActivateReq
+	ServerInfo      *entity.Server
+	NodeStatFactory *entity.NodeStatFactory
+	Cwd             string
+	NeedDeploy      bool
+	ServerId        int
+	ServerNodeIds   []int
+	PackageId       int
+	LocalNodeId     int
+}
+
+// NewActivateContext 创建激活上下文
+func NewActivateContext(req *protocol.ActivateReq) (*ActivateContext, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("获取当前工作目录失败: %w", err)
+	}
+
+	return &ActivateContext{
+		Req:           req,
+		Cwd:           cwd,
+		NeedDeploy:    req.Type == constant.ACTIVATE_DEPLOY,
+		ServerId:      int(req.ServerId),
+		ServerNodeIds: constant.ConvertToIntSlice(req.ServerNodeIds),
+		PackageId:     int(req.PackageId),
+		LocalNodeId:   config.Conf.GetLocalNodeId(),
+	}, nil
+}
+
+// Activate 激活服务 - 重构后的主函数
 func Activate(req *protocol.ActivateReq) (code int32, msg string) {
-	cwd, _ := os.Getwd()
-	needDeploy := req.Type == constant.ACTIVATE_DEPLOY
-	serverId := int(req.ServerId)
-	serverNodeIds := constant.ConvertToIntSlice(req.ServerNodeIds)
-	packageId := int(req.PackageId)
-	localNodeId := config.Conf.GetLocalNodeId()
-	logger.Server.Infof("DeployServer | req | %v", req)
-	serverInfo, err := mapper.T_Mapper.GetServerInfo(serverId)
+	// 创建激活上下文
+	ctx, err := NewActivateContext(req)
 	if err != nil {
-		return CODE_FAIL, "获取服务信息失败:" + err.Error()
+		return CODE_FAIL, err.Error()
 	}
-	logger.Server.Infof("DeployServer | serverInfo | %v", serverInfo)
-	execPath := serverInfo.ExecFilePath
-	serverName := serverInfo.ServerName
-	serverType := serverInfo.ServerType
-	dockerName := serverInfo.DockerName
+
+	logger.Server.Infof("Activate | req=%+v", req)
+
+	// 获取服务信息
+	if err := ctx.loadServerInfo(); err != nil {
+		return CODE_FAIL, fmt.Sprintf("获取服务信息失败: %v", err)
+	}
+
+	// 设置panic恢复
+	defer ctx.setupPanicRecovery()
+
 	// 拉取配置文件
-	err = api.GetConfigList(api.GetConfigListReq{
-		ServerId: serverId,
-	})
-	if err != nil {
-		return CODE_FAIL, "获取配置文件失败: " + err.Error()
+	if err := ctx.fetchConfigFiles(); err != nil {
+		return CODE_FAIL, fmt.Sprintf("获取配置文件失败: %v", err)
 	}
 
-	// 部署模式，需要解压文件到目标目录，然后再启动execPath
-	if needDeploy {
-		// TODO 如果没有包，则需要下载
-		packageInfo, err := mapper.T_Mapper.GetServerPackageInfo(packageId)
-		if err != nil {
-			return CODE_FAIL, err.Error()
-		}
-		logger.Server.Infof("DeployServer | packageInfo | %v", packageInfo)
-		packageFileName := packageInfo.FileName
-		tarPath := filepath.Join(constant.TARGET_PACKAGE_DIR, serverName, packageFileName)
-		if _, err := os.Stat(tarPath); err != nil {
-			err = api.GetFile(api.FileReq{
-				FileName: packageFileName,
-				Type:     constant.FILE_TYPE_PACKAGE,
-				ServerId: serverId,
-			})
-			if err != nil {
-				return CODE_FAIL, "下载服务包失败: " + err.Error()
-			}
-		}
-		serverDir := filepath.Join(constant.TARGET_SERVANT_DIR, serverName)
-		logger.Package.Infof("DeployServer | tarPath | %s | serverDir | %s", tarPath, serverDir)
-		err = patchutils.T_PatchUtils.Tar2Dest(tarPath, serverDir)
-		if err != nil {
-			return CODE_FAIL, "解压服务包失败: " + err.Error()
+	// 处理部署逻辑
+	if ctx.NeedDeploy {
+		if err := ctx.handleDeployment(); err != nil {
+			return CODE_FAIL, fmt.Sprintf("部署失败: %v", err)
 		}
 	}
 
-	nodes, err := mapper.T_Mapper.GetServerNodes(serverId, localNodeId)
-	logger.Server.Infof("DeployServer | nodes | %v", nodes)
-	if err != nil {
-		return CODE_FAIL, "获取服务节点失败: " + err.Error()
+	// 停止现有服务
+	if code, msg := ctx.deactivateExistingNodes(); code != CODE_SUCCESS {
+		return code, msg
 	}
-	nodeStatFactory := entity.NewNodeStatFactory(&entity.NodeStat{
+
+	// 激活新节点
+	if err := ctx.activateNodes(); err != nil {
+		return CODE_FAIL, fmt.Sprintf("激活节点失败: %v", err)
+	}
+
+	// 更新节点版本信息
+	if ctx.NeedDeploy {
+		if err := ctx.updateNodePatch(); err != nil {
+			return CODE_FAIL, fmt.Sprintf("更新节点版本失败: %v", err)
+		}
+	}
+
+	// 记录成功状态
+	ctx.logSuccessStatus()
+	return CODE_SUCCESS, MSG_SUCCESS
+}
+
+// loadServerInfo 加载服务信息
+func (ctx *ActivateContext) loadServerInfo() error {
+	serverInfo, err := mapper.T_Mapper.GetServerInfo(ctx.ServerId)
+	if err != nil {
+		return fmt.Errorf("获取服务信息失败: %w", err)
+	}
+
+	ctx.ServerInfo = &serverInfo
+	ctx.NodeStatFactory = entity.NewNodeStatFactory(&entity.NodeStat{
 		ServerName: serverInfo.ServerName,
 		ServerId:   serverInfo.ID,
 	})
-	defer func() {
-		if r := recover(); r != nil {
-			mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-				TYPE:    entity.TYPE_ERROR,
-				Content: fmt.Sprintf("激活服务失败 %s | 主机节点 %d | 版本号 | %d  | 原因 %s", serverInfo.ServerName, localNodeId, req.PackageId, r),
-			}))
-			logger.Server.Errorf("DeployServer | recover | %v", r)
-		}
-	}()
-	// 先 deactivate 当前存在的节点
-	deactivateCode, dectivateMsg := Deactivate(&protocol.ActivateReq{
-		ServerId:      req.ServerId,
-		ServerNodeIds: req.ServerNodeIds,
-	})
-	if deactivateCode != CODE_SUCCESS {
-		mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
+
+	logger.Server.Infof("Activate | serverInfo=%+v", serverInfo)
+	return nil
+}
+
+// setupPanicRecovery 设置panic恢复机制
+func (ctx *ActivateContext) setupPanicRecovery() {
+	if r := recover(); r != nil {
+		errorMsg := fmt.Sprintf("激活服务失败 %s | 主机节点 %d | 版本号 %d | 原因 %v",
+			ctx.ServerInfo.ServerName, ctx.LocalNodeId, ctx.PackageId, r)
+		
+		mapper.T_Mapper.SaveNodeStat(ctx.NodeStatFactory.Assign(&entity.NodeStat{
 			TYPE:    entity.TYPE_ERROR,
-			Content: fmt.Sprintf("部署服务器失败-停止服务失败 %s | 节点 %v | 版本号 | %d  | 原因 %s", serverInfo.ServerName, req.ServerNodeIds, req.PackageId, err.Error()),
+			Content: errorMsg,
 		}))
-		return deactivateCode, dectivateMsg
+		logger.Server.Errorf("Activate | panic recovered: %v", r)
 	}
-	// 遍历 当前节点下的服务节点列表，找出需要激活的节点
+}
+
+// fetchConfigFiles 拉取配置文件
+func (ctx *ActivateContext) fetchConfigFiles() error {
+	return api.GetConfigList(api.GetConfigListReq{
+		ServerId: ctx.ServerId,
+	})
+}
+
+// handleDeployment 处理部署逻辑
+func (ctx *ActivateContext) handleDeployment() error {
+	// 获取包信息
+	packageInfo, err := mapper.T_Mapper.GetServerPackageInfo(ctx.PackageId)
+	if err != nil {
+		return fmt.Errorf("获取包信息失败: %w", err)
+	}
+
+	logger.Server.Infof("Activate | packageInfo=%+v", packageInfo)
+
+	// 下载包文件（如果不存在）
+	if err := ctx.downloadPackageIfNeeded(packageInfo.FileName); err != nil {
+		return fmt.Errorf("下载包失败: %w", err)
+	}
+
+	// 解压包到目标目录
+	if err := ctx.extractPackage(packageInfo.FileName); err != nil {
+		return fmt.Errorf("解压包失败: %w", err)
+	}
+
+	return nil
+}
+
+// downloadPackageIfNeeded 如果需要则下载包
+func (ctx *ActivateContext) downloadPackageIfNeeded(packageFileName string) error {
+	tarPath := filepath.Join(constant.TARGET_PACKAGE_DIR, ctx.ServerInfo.ServerName, packageFileName)
+	
+	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
+		return api.GetFile(api.FileReq{
+			FileName: packageFileName,
+			Type:     constant.FILE_TYPE_PACKAGE,
+			ServerId: ctx.ServerId,
+		})
+	}
+	return nil
+}
+
+// extractPackage 解压包
+func (ctx *ActivateContext) extractPackage(packageFileName string) error {
+	tarPath := filepath.Join(constant.TARGET_PACKAGE_DIR, ctx.ServerInfo.ServerName, packageFileName)
+	serverDir := filepath.Join(constant.TARGET_SERVANT_DIR, ctx.ServerInfo.ServerName)
+	
+	logger.Package.Infof("Activate | extracting tarPath=%s to serverDir=%s", tarPath, serverDir)
+	return patchutils.T_PatchUtils.Tar2Dest(tarPath, serverDir)
+}
+
+// deactivateExistingNodes 停止现有节点
+func (ctx *ActivateContext) deactivateExistingNodes() (int32, string) {
+	deactivateCode, deactivateMsg := Deactivate(&protocol.ActivateReq{
+		ServerId:      ctx.Req.ServerId,
+		ServerNodeIds: ctx.Req.ServerNodeIds,
+	})
+
+	if deactivateCode != CODE_SUCCESS {
+		errorMsg := fmt.Sprintf("停止服务失败 %s | 节点 %v | 版本号 %d | 原因 %s",
+			ctx.ServerInfo.ServerName, ctx.Req.ServerNodeIds, ctx.PackageId, deactivateMsg)
+		
+		mapper.T_Mapper.SaveNodeStat(ctx.NodeStatFactory.Assign(&entity.NodeStat{
+			TYPE:    entity.TYPE_ERROR,
+			Content: errorMsg,
+		}))
+	}
+
+	return deactivateCode, deactivateMsg
+}
+
+// activateNodes 激活节点
+func (ctx *ActivateContext) activateNodes() error {
+	nodes, err := mapper.T_Mapper.GetServerNodes(ctx.ServerId, ctx.LocalNodeId)
+	if err != nil {
+		return fmt.Errorf("获取服务节点失败: %w", err)
+	}
+
+	logger.Server.Infof("Activate | nodes=%+v", nodes)
+
 	for _, node := range nodes {
-		if !patchutils.T_PatchUtils.Contains(serverNodeIds, node.Id) {
+		if !patchutils.T_PatchUtils.Contains(ctx.ServerNodeIds, node.Id) {
 			continue
 		}
-		mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-			TYPE:         entity.TYPE_INFO,
-			ServerNodeId: node.Id,
-			Content:      fmt.Sprintf("开始部署服务器 %s | 节点 %d | 版本号 | %d | 端口号 %d", serverInfo.ServerName, node.Id, req.PackageId, node.Port),
-		}))
-		logger.Server.Infof("DeployServer | node | %v", node)
-		targetFile := filepath.Join(cwd, constant.TARGET_SERVANT_DIR, serverName, execPath)
-		patchServerInfo := &command.ServerInfo{
-			ServerType:     serverType,
-			ServerName:     serverName,
-			TargetFile:     targetFile,
-			BindPort:       node.Port,
-			BindHost:       node.Host,
-			NodeId:         node.Id,
-			AdditionalArgs: node.AdditionalArgs,
-			ServerRunType:  node.ServerRunType,
-			ServerId:       serverId,
-			DockerName: 	dockerName,
+
+		if err := ctx.activateSingleNode(&node); err != nil {
+			return fmt.Errorf("激活节点 %d 失败: %w", node.Id, err)
 		}
-		logger.Server.Infof("DeployServer | patchServerInfo | %v", patchServerInfo)
-		cmd, err := patchServerInfo.CreateCommand()
-		if err != nil {
-			logger.Server.Infof("DeployServer | err | %v", err)
-			// ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "创建服务器命令失败", "error": err.Error()})
-			return CODE_FAIL, err.Error()
-		}
-		args := cmd.GetCmd().Args
-		logger.Server.Infof("DeployServer | args | %v", args)
-		err = cmd.Start()
-		command.CenterManager.AddCommand(node.Id, cmd)
-		if err != nil {
-			mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-				TYPE:         entity.TYPE_ERROR,
-				ServerNodeId: node.Id,
-				Content:      fmt.Sprintf("启动服务器失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", serverInfo.ServerName, node.Id, req.PackageId, node.Port, err.Error()),
-			}))
-			return CODE_FAIL, "启动服务器失败: " + err.Error()
-		}
-		err = command.UseCgroup(cmd)
-		if err != nil {
-			mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-				TYPE:         entity.TYPE_ERROR,
-				ServerNodeId: node.Id,
-				Content:      fmt.Sprintf("设置cgroup失败 %s | 节点 %d | 版本号 | %d | 端口号 %d | 原因 %s", serverInfo.ServerName, node.Id, req.PackageId, node.Port, err.Error()),
-			}))
-			return CODE_FAIL, "设置cgroup失败:" + err.Error()
-		}
-		logger.Server.Infof("DeployServer | cmd | %v", cmd)
 	}
-	mapper.T_Mapper.SaveNodeStat(nodeStatFactory.Assign(&entity.NodeStat{
-		TYPE:    entity.TYPE_SUCCESS,
-		Content: fmt.Sprintf("部署服务器成功 %s | 节点 %s | 版本号 %d", serverInfo.ServerName, constant.ConvertToIntSlice(req.ServerNodeIds), req.PackageId),
+
+	return nil
+}
+
+// activateSingleNode 激活单个节点
+func (ctx *ActivateContext) activateSingleNode(node *mapper.ServerNodesVo) error {
+	// 记录开始状态
+	ctx.logNodeStartStatus(node)
+
+	// 创建服务器信息
+	patchServerInfo := ctx.createServerInfo(node)
+	logger.Server.Infof("Activate | patchServerInfo=%+v", patchServerInfo)
+
+	// 创建命令
+	cmd, err := patchServerInfo.CreateCommand()
+	if err != nil {
+		return fmt.Errorf("创建命令失败: %w", err)
+	}
+
+	logger.Server.Infof("Activate | command args=%v", cmd.GetCmd().Args)
+
+	// 启动服务
+	if err := cmd.Start(); err != nil {
+		ctx.logNodeErrorStatus(node, "启动服务器失败", err)
+		return fmt.Errorf("启动服务失败: %w", err)
+	}
+
+	// 添加到命令管理器
+	command.CenterManager.AddCommand(node.Id, cmd)
+
+	// 设置cgroup
+	if err := command.UseCgroup(cmd); err != nil {
+		ctx.logNodeErrorStatus(node, "设置cgroup失败", err)
+		return fmt.Errorf("设置cgroup失败: %w", err)
+	}
+
+	logger.Server.Infof("Activate | node %d activated successfully", node.Id)
+	return nil
+}
+
+// createServerInfo 创建服务器信息
+func (ctx *ActivateContext) createServerInfo(node *mapper.ServerNodesVo) *command.ServerInfo {
+	targetFile := filepath.Join(ctx.Cwd, constant.TARGET_SERVANT_DIR, 
+		ctx.ServerInfo.ServerName, ctx.ServerInfo.ExecFilePath)
+
+	return &command.ServerInfo{
+		ServerType:     ctx.ServerInfo.ServerType,
+		ServerName:     ctx.ServerInfo.ServerName,
+		TargetFile:     targetFile,
+		BindPort:       node.Port,
+		BindHost:       node.Host,
+		NodeId:         node.Id,
+		AdditionalArgs: node.AdditionalArgs,
+		ServerRunType:  node.ServerRunType,
+		ServerId:       ctx.ServerId,
+		DockerName:     ctx.ServerInfo.DockerName,
+	}
+}
+
+// updateNodePatch 更新节点版本
+func (ctx *ActivateContext) updateNodePatch() error {
+	return mapper.T_Mapper.UpdateNodePatch(ctx.ServerNodeIds, ctx.PackageId)
+}
+
+// logNodeStartStatus 记录节点开始状态
+func (ctx *ActivateContext) logNodeStartStatus(node *mapper.ServerNodesVo) {
+	content := fmt.Sprintf("开始部署服务器 %s | 节点 %d | 版本号 %d | 端口号 %d",
+		ctx.ServerInfo.ServerName, node.Id, ctx.PackageId, node.Port)
+	
+	mapper.T_Mapper.SaveNodeStat(ctx.NodeStatFactory.Assign(&entity.NodeStat{
+		TYPE:         entity.TYPE_INFO,
+		ServerNodeId: node.Id,
+		Content:      content,
 	}))
-	if needDeploy {
-		err = mapper.T_Mapper.UpdateNodePatch(serverNodeIds, packageId)
-		if err != nil {
-			return CODE_FAIL, "更新服务器节点版本号失败 :" + err.Error()
-		}
-	}
-	return CODE_SUCCESS, MSG_SUCCESS
+}
+
+// logNodeErrorStatus 记录节点错误状态
+func (ctx *ActivateContext) logNodeErrorStatus(node *mapper.ServerNodesVo, operation string, err error) {
+	content := fmt.Sprintf("%s %s | 节点 %d | 版本号 %d | 端口号 %d | 原因 %s",
+		operation, ctx.ServerInfo.ServerName, node.Id, ctx.PackageId, node.Port, err.Error())
+	
+	mapper.T_Mapper.SaveNodeStat(ctx.NodeStatFactory.Assign(&entity.NodeStat{
+		TYPE:         entity.TYPE_ERROR,
+		ServerNodeId: node.Id,
+		Content:      content,
+	}))
+}
+
+// logSuccessStatus 记录成功状态
+func (ctx *ActivateContext) logSuccessStatus() {
+	content := fmt.Sprintf("部署服务器成功 %s | 节点 %v | 版本号 %d",
+		ctx.ServerInfo.ServerName, ctx.ServerNodeIds, ctx.PackageId)
+	
+	mapper.T_Mapper.SaveNodeStat(ctx.NodeStatFactory.Assign(&entity.NodeStat{
+		TYPE:    entity.TYPE_SUCCESS,
+		Content: content,
+	}))
 }
