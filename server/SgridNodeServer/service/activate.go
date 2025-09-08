@@ -55,7 +55,7 @@ func Activate(req *protocol.ActivateReq) (code int32, msg string) {
 		return CODE_FAIL, err.Error()
 	}
 
-	logger.Server.Infof("Activate | req=%+v", req)
+	logger.Active.Infof("Activate | req=%+v", req)
 
 	// 获取服务信息
 	if err := ctx.loadServerInfo(); err != nil {
@@ -70,16 +70,18 @@ func Activate(req *protocol.ActivateReq) (code int32, msg string) {
 		return CODE_FAIL, fmt.Sprintf("获取配置文件失败: %v", err)
 	}
 
+
+	// 停止现有服务
+	if code, msg := ctx.deactivateExistingNodes(); code != CODE_SUCCESS {
+		logger.Active.Errorf("Activate | deactivateExistingNodes | error=%s", msg)
+		return code, msg
+	}
+
 	// 处理部署逻辑
 	if ctx.NeedDeploy {
 		if err := ctx.handleDeployment(); err != nil {
 			return CODE_FAIL, fmt.Sprintf("部署失败: %v", err)
 		}
-	}
-
-	// 停止现有服务
-	if code, msg := ctx.deactivateExistingNodes(); code != CODE_SUCCESS {
-		return code, msg
 	}
 
 	// 激活新节点
@@ -126,7 +128,7 @@ func (ctx *ActivateContext) setupPanicRecovery() {
 			TYPE:    entity.TYPE_ERROR,
 			Content: errorMsg,
 		}))
-		logger.Server.Errorf("Activate | panic recovered: %v", r)
+		logger.Active.Errorf("Activate | panic recovered: %v", r)
 	}
 }
 
@@ -142,18 +144,21 @@ func (ctx *ActivateContext) handleDeployment() error {
 	// 获取包信息
 	packageInfo, err := mapper.T_Mapper.GetServerPackageInfo(ctx.PackageId)
 	if err != nil {
+		logger.Active.Errorf("Activate | GetServerPackageInfo | error=%s", err.Error())
 		return fmt.Errorf("获取包信息失败: %w", err)
 	}
 
-	logger.Server.Infof("Activate | packageInfo=%+v", packageInfo)
+	logger.Active.Infof("Activate | packageInfo=%+v", packageInfo)
 
 	// 下载包文件（如果不存在）
 	if err := ctx.downloadPackageIfNeeded(packageInfo.FileName); err != nil {
+		logger.Active.Errorf("Activate | downloadPackageIfNeeded | error=%s", err.Error())
 		return fmt.Errorf("下载包失败: %w", err)
 	}
 
 	// 解压包到目标目录
 	if err := ctx.extractPackage(packageInfo.FileName); err != nil {
+		logger.Active.Errorf("Activate | extractPackage | error=%s", err.Error())
 		return fmt.Errorf("解压包失败: %w", err)
 	}
 
@@ -163,7 +168,7 @@ func (ctx *ActivateContext) handleDeployment() error {
 // downloadPackageIfNeeded 如果需要则下载包
 func (ctx *ActivateContext) downloadPackageIfNeeded(packageFileName string) error {
 	tarPath := filepath.Join(constant.TARGET_PACKAGE_DIR, ctx.ServerInfo.ServerName, packageFileName)
-	
+	logger.Active.Infof("Activate | downloadPackageIfNeeded | tarPath=%s", tarPath)
 	if _, err := os.Stat(tarPath); os.IsNotExist(err) {
 		return api.GetFile(api.FileReq{
 			FileName: packageFileName,
@@ -179,7 +184,7 @@ func (ctx *ActivateContext) extractPackage(packageFileName string) error {
 	tarPath := filepath.Join(constant.TARGET_PACKAGE_DIR, ctx.ServerInfo.ServerName, packageFileName)
 	serverDir := filepath.Join(constant.TARGET_SERVANT_DIR, ctx.ServerInfo.ServerName)
 	
-	logger.Package.Infof("Activate | extracting tarPath=%s to serverDir=%s", tarPath, serverDir)
+	logger.Active.Infof("Activate | extracting tarPath=%s to serverDir=%s", tarPath, serverDir)
 	return patchutils.T_PatchUtils.Tar2Dest(tarPath, serverDir)
 }
 
@@ -193,6 +198,7 @@ func (ctx *ActivateContext) deactivateExistingNodes() (int32, string) {
 	if deactivateCode != CODE_SUCCESS {
 		errorMsg := fmt.Sprintf("停止服务失败 %s | 节点 %v | 版本号 %d | 原因 %s",
 			ctx.ServerInfo.ServerName, ctx.Req.ServerNodeIds, ctx.PackageId, deactivateMsg)
+		logger.Active.Errorf("Activate | deactivateExistingNodes | errorMsg=%s", errorMsg)
 		
 		mapper.T_Mapper.SaveNodeStat(ctx.NodeStatFactory.Assign(&entity.NodeStat{
 			TYPE:    entity.TYPE_ERROR,
@@ -207,10 +213,11 @@ func (ctx *ActivateContext) deactivateExistingNodes() (int32, string) {
 func (ctx *ActivateContext) activateNodes() error {
 	nodes, err := mapper.T_Mapper.GetServerNodes(ctx.ServerId, ctx.LocalNodeId)
 	if err != nil {
+		logger.Active.Errorf("Activate | GetServerNodes | error=%s", err.Error())
 		return fmt.Errorf("获取服务节点失败: %w", err)
 	}
 
-	logger.Server.Infof("Activate | nodes=%+v", nodes)
+	logger.Active.Infof("Activate | nodes=%+v", nodes)
 
 	for _, node := range nodes {
 		if !patchutils.T_PatchUtils.Contains(ctx.ServerNodeIds, node.Id) {
@@ -218,6 +225,7 @@ func (ctx *ActivateContext) activateNodes() error {
 		}
 
 		if err := ctx.activateSingleNode(&node); err != nil {
+			logger.Active.Errorf("Activate | activateSingleNode | error=%s", err.Error())
 			return fmt.Errorf("激活节点 %d 失败: %w", node.Id, err)
 		}
 	}
@@ -232,7 +240,7 @@ func (ctx *ActivateContext) activateSingleNode(node *mapper.ServerNodesVo) error
 
 	// 创建服务器信息
 	patchServerInfo := ctx.createServerInfo(node)
-	logger.Server.Infof("Activate | patchServerInfo=%+v", patchServerInfo)
+	logger.Active.Infof("Activate | patchServerInfo=%+v", patchServerInfo)
 
 	// 创建命令
 	cmd, err := patchServerInfo.CreateCommand()
@@ -240,10 +248,11 @@ func (ctx *ActivateContext) activateSingleNode(node *mapper.ServerNodesVo) error
 		return fmt.Errorf("创建命令失败: %w", err)
 	}
 
-	logger.Server.Infof("Activate | command args=%v", cmd.GetCmd().Args)
+	logger.Active.Infof("Activate | command args=%v", cmd.GetCmd().Args)
 
 	// 启动服务
 	if err := cmd.Start(); err != nil {
+		logger.Active.Errorf("Activate | Start | error=%s", err.Error())
 		ctx.logNodeErrorStatus(node, "启动服务器失败", err)
 		return fmt.Errorf("启动服务失败: %w", err)
 	}
@@ -257,7 +266,7 @@ func (ctx *ActivateContext) activateSingleNode(node *mapper.ServerNodesVo) error
 		return fmt.Errorf("设置cgroup失败: %w", err)
 	}
 
-	logger.Server.Infof("Activate | node %d activated successfully", node.Id)
+	logger.Active.Infof("Activate | node %d activated successfully", node.Id)
 	return nil
 }
 
