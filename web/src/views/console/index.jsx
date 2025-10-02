@@ -37,6 +37,7 @@ import ResourceModal from "./ResourceModal";
 import GroupModal from "./GroupModal";
 import ServerModal from "./ServerModal";
 import UpdateServerModal from "./UpdateServerModal";
+import ConfigModal from "./ConfigModal";
 import ScaleModal from "./ScaleModal";
 import DeployModal from "./DeployModal";
 import { Descriptions } from "antd";
@@ -68,6 +69,7 @@ export default function Console() {
   const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [serverModalVisible, setServerModalVisible] = useState(false);
   const [updateServerVisible, setUpdateServerVisible] = useState(false);
+  const [configModalVisible, setConfigModalVisible] = useState(false);
   const [scaleModalVisible, setScaleModalVisible] = useState(false);
   const [deployModalVisible, setDeployModalVisible] = useState(false);
   const [serverConfigVisible, setServerConfigVisible] = useState(false);
@@ -566,6 +568,9 @@ export default function Console() {
                 <Button onClick={() => setServerModalVisible(true)}>
                   添加服务
                 </Button>
+                <Button onClick={() => setConfigModalVisible(true)}>
+                  配置管理
+                </Button>
               </ButtonGroup>
             }
           >
@@ -897,6 +902,13 @@ export default function Console() {
         onCancel={()=>setUpdateServerVisible(false)}
         serverInfo={serverInfo}
         groupOptions={groupOptions}
+      />
+      <ConfigModal
+        visible={configModalVisible}
+        onOk={()=>{
+          setConfigModalVisible(false);
+        }}
+        onCancel={()=>setConfigModalVisible(false)}
       />
       <AddNodeModal
         visible={addNodeVisible}

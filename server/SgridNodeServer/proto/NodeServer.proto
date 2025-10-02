@@ -95,6 +95,8 @@ message GetLogRes{
 
 // 文件传输服务定义
 service NodeServant {
+    // 探针请求
+    rpc Probe(google.protobuf.Empty) returns (google.protobuf.Empty) {}
     // 节点心跳
     rpc KeepAlive(google.protobuf.Empty) returns (google.protobuf.Empty) {}
     // 获取节点服务状态

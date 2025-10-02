@@ -168,3 +168,20 @@ export function syncUploadFile(data){
     data 
   });
 }
+
+// 主控配置管理
+export function getMainConfig() {
+  return request({ url: "/config/getMainConfig" });
+}
+
+export function updateMainConfig(data) {
+  return request({ url: "/config/updateMainConfig", data });
+}
+
+export function getConfigItem(data) {
+  return request({ url: "/config/getConfigItem", data });
+}
+
+export function setConfigItem(data) {
+  return request({ url: "/config/setConfigItem", data });
+}

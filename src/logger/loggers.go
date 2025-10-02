@@ -18,3 +18,5 @@ var Docker = CreateLogger("docker")
 var Package = CreateLogger("package")
 
 var Active = CreateLogger("active")
+
+var Probe = CreateLogger("probe")

@@ -78,6 +78,12 @@ func LoadRoutes(engine *gin.Engine) {
 	// 登录
 	group.POST("/login", handlers.Login)
 
+	// 主控配置管理
+	group.POST("/config/getMainConfig", handlers.GetMainConfig)
+	group.POST("/config/updateMainConfig", handlers.UpdateMainConfig)
+	group.POST("/config/getConfigItem", handlers.GetConfigItem)
+	group.POST("/config/setConfigItem", handlers.SetConfigItem)
+
 	group.POST("/server/scripts/deploy", handlers.DeployScripts)
 	group.POST("/server/downloadFile", handlers.DownloadFile)
 	group.POST("/server/getFileList", handlers.GetFileList)

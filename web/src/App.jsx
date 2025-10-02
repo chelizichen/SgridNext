@@ -9,6 +9,7 @@ import NodeManager from './views/control/components/NodeManager';
 import ServerList from './views/control/components/ServerList';
 import ConfigList from './views/control/components/ConfigList';
 import NodeStat from './views/control/components/NodeStat';
+import ProbeList from './views/control/components/ProbeList';
 
 const { Header, Content, Footer } = Layout;
 
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="machine_list" element={<NodeManager />} />
               <Route path="config_list" element={<ConfigList />} />
               <Route path="nodestat_list" element={<NodeStat />} />
+              <Route path="probe_list" element={<ProbeList />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/log" element={<LogView />} />

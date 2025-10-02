@@ -37,6 +37,17 @@ func (c Config) Get(args ...string) string {
 	return ""
 }
 
+// 获取最新配置的值
+func (c Config)GetNewest(key string) string {
+	filePath := c.Get(KEY_CONFIG_PATH)
+	// 如果 filePath 为空，则返回空
+	if filePath == "" {
+		return ""
+	}
+	conf := loadJsonConfig(filePath)
+	return conf.Get(key)
+}
+
 func (c Config) Set(key string, value interface{}) {
 	c[key] = value
 	// 保存到文件

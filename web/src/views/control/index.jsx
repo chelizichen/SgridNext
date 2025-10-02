@@ -15,6 +15,7 @@ const items = [
   { key: "server_list", icon: <PieChartOutlined />, label: "服务列表" },
   { key: "machine_list", icon: <DesktopOutlined />, label: "节点列表" },
   { key: "nodestat_list", icon: <DesktopOutlined />, label: "节点状态列表" },
+  { key: "probe_list", icon: <DesktopOutlined />, label: "探针列表" },
   // {
   //   key: 'sub1',
   //   label: 'Navigation One',

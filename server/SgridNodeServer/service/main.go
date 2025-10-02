@@ -31,6 +31,11 @@ type NodeServer struct {
 	protocol.UnimplementedNodeServantServer
 }
 
+func (n *NodeServer) Probe(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	logger.App.Info("探针请求")
+	return &emptypb.Empty{}, nil
+}
+
 func (n *NodeServer) KeepAlive(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	logger.Alive.Info("alive called")
 	err := mapper.T_Mapper.UpdateNodeUpdateTime(config.Conf.GetLocalNodeId())
