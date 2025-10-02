@@ -2,7 +2,7 @@ import React, { useState,useEffect } from 'react';
 import { Modal, Upload, Input, Button, List, message,Divider, Table } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { deployServer, getServerPackageList, uploadPackage } from './api';
-import { downloadFile } from './api';
+import { downloadFile,syncUploadFile } from './api';
 import { _constant } from '../../common/constant';
 
 export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes }) {
@@ -97,6 +97,29 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
     })
     onOk && onOk();
   };
+
+  const handleSyncPackage = () => {
+    if(!packageId){
+      messageApi.warning('请选择要同步的包');
+      return;
+    }
+    const body = {
+      serverNodeIds: selectedPublishNodes,
+      packageId: packageId,
+      serverId: serverInfo.server_id,
+    }
+    syncUploadFile(body).then(res=>{
+      if(!res.success){
+        messageApi.error(res.msg);
+        return;
+      }
+      messageApi.success('同步成功');
+    }).catch(err => {
+      messageApi.error('同步失败: ' + err.message);
+    })
+    onOk && onOk();
+
+  }
 
   useEffect(()=>{
     setOffset(0);
@@ -295,15 +318,26 @@ export default function DeployModal({ visible, onOk, onCancel, serverInfo,nodes 
               </>
           )
         }
-        <Button
-          type="primary"
-          style={{ marginTop: 16 }}
-          onClick={handlePublish}
-          disabled={!selectedPublishNodes.length || !packageId}
-          block
-        >
-          发布
-        </Button>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Button
+            type="primary"
+            style={{ margin:16,marginLeft:0 }}
+            onClick={handlePublish}
+            disabled={!selectedPublishNodes.length || !packageId}
+            block
+          >
+            发布
+          </Button>
+            <Button
+            type="primary"
+            style={{ margin:16,marginRight:0 }}
+            onClick={handleSyncPackage}
+            disabled={!selectedPublishNodes.length || !packageId}
+            block
+          >
+            同步包
+          </Button>
+        </div>
       </Modal>
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Row,
   Col,
@@ -36,6 +36,7 @@ import { getServerNodeStatusType, getServerType } from "./constant";
 import ResourceModal from "./ResourceModal";
 import GroupModal from "./GroupModal";
 import ServerModal from "./ServerModal";
+import UpdateServerModal from "./UpdateServerModal";
 import ScaleModal from "./ScaleModal";
 import DeployModal from "./DeployModal";
 import { Descriptions } from "antd";
@@ -43,7 +44,7 @@ import _ from "lodash-es";
 import AddNodeModal from "./AddNodeForm";
 import UploadConfigModal from "./UploadConfigModal";
 import HistoryModal from "./HistoryModal";
-import { useNavigate } from 'react-router-dom'
+// import { useNavigate } from 'react-router-dom'
 
 function conversionConf(files) {
   const result = {};
@@ -61,16 +62,17 @@ function conversionConf(files) {
 export default function Console() {
   // 检测是否为移动设备
   const isMobile = useMediaQuery({ maxWidth: 1000 });
-  const nagivate = useNavigate();
+  // const nagivate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const [resourceModalVisible, setResourceModalVisible] = useState(false);
   const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [serverModalVisible, setServerModalVisible] = useState(false);
+  const [updateServerVisible, setUpdateServerVisible] = useState(false);
   const [scaleModalVisible, setScaleModalVisible] = useState(false);
   const [deployModalVisible, setDeployModalVisible] = useState(false);
   const [serverConfigVisible, setServerConfigVisible] = useState(false);
   const [addNodeVisible, setAddNodeVisible] = useState(false);
-
+  
   const [form] = Form.useForm();
   const [groupForm] = Form.useForm();
   const [serverForm] = Form.useForm();
@@ -338,14 +340,14 @@ export default function Console() {
     });
   }
 
-  function initServersAndNodes() {
+  const initServersAndNodes = useCallback(() => {
     initServerTreeData();
     initNodes();
-  }
+  }, []);
 
   useEffect(() => {
     initServersAndNodes();
-  }, []);
+  }, [initServersAndNodes]);
 
   const rowSelection = {
     onChange: (selectedRowKeys, selectedRows) => {
@@ -651,6 +653,13 @@ export default function Console() {
             variant={true}
             extra={
             <ButtonGroup> 
+              <Button onClick={()=>{
+                if (!serverInfo.server_id) {
+                  messageApi.warning("请先选择一个服务");
+                  return;
+                }
+                setUpdateServerVisible(true);
+              }}>更新服务</Button>
               <Button onClick={handleRefresh}>刷新</Button>
               <Button onClick={exportSgridReleaseConf} disabled={!serverInfo.server_id}>导出配置</Button>
             </ButtonGroup>
@@ -829,8 +838,7 @@ export default function Console() {
       />
       <GroupModal
         visible={groupModalVisible}
-        onOk={(values) => {
-          console.log("创建组:", values);
+        onOk={() => {
           setGroupModalVisible(false);
           handleRefresh();
         }}
@@ -839,7 +847,7 @@ export default function Console() {
       />
       <ServerModal
         visible={serverModalVisible}
-        onOk={(values) => {
+        onOk={() => {
           setServerModalVisible(false);
           handleRefresh();
         }}
@@ -865,7 +873,7 @@ export default function Console() {
       />
       <ScaleModal
         visible={scaleModalVisible}
-        onOk={(selectedNodes) => {
+        onOk={() => {
           setScaleModalVisible(false);
           handleRefresh();
         }}
@@ -880,10 +888,19 @@ export default function Console() {
         nodes={serverNodes}
         serverInfo={serverInfo}
       />
+      <UpdateServerModal
+        visible={updateServerVisible}
+        onOk={()=>{
+          setUpdateServerVisible(false);
+          handleRefresh();
+        }}
+        onCancel={()=>setUpdateServerVisible(false)}
+        serverInfo={serverInfo}
+        groupOptions={groupOptions}
+      />
       <AddNodeModal
         visible={addNodeVisible}
-        onOk={(values) => {
-          console.log("添加节点:", values);
+        onOk={() => {
           setAddNodeVisible(false);
         }}
         onCancel={() => setAddNodeVisible(false)}

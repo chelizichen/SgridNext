@@ -13,6 +13,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group := engine.Group("/api")
 	// 创建服务
 	group.POST("/server/createServer", handlers.CreateServer)
+	// 更新服务
+	group.POST("/server/updateServer", handlers.UpdateServer)
 	// 获取服务信息
 	group.POST("/server/getServerInfo", handlers.GetServerInfo)
 	// 上传服务包
@@ -80,6 +82,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/downloadFile", handlers.DownloadFile)
 	group.POST("/server/getFileList", handlers.GetFileList)
 	group.POST("/server/getLog", handlers.GetLog)
+	// 上传文件
+	group.POST("/server/syncUploadFile", handlers.SyncUploadFile)
 	// 前端静态文件
 	cwd, _ := os.Getwd()
 	root := filepath.Join(cwd, "dist")

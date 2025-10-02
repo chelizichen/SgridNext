@@ -31,6 +31,10 @@ export function createServerNode(data) {
 export function updateServerNode(data) {
   return request({ url: "/server/updateServerNode", data });
 }
+
+export function updateServer(data) {
+  return request({ url: "/server/updateServer", data });
+}
 export function deleteServerNode(data){
   return request({ url: "/server/deleteServerNode",data });
 }
@@ -153,6 +157,14 @@ export function getLog(data) {
 export function getSyncStatus(data){
   return request({ 
     url: "/server/getSyncStatus",
+    data 
+  });
+}
+
+
+export function syncUploadFile(data){
+  return request({ 
+    url: "/server/syncUploadFile",
     data 
   });
 }

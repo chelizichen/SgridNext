@@ -95,22 +95,22 @@ func (t *T_PatchServer_Mapper) UpdateNodeStatus(id int, status int) error {
 	return err
 }
 
-func (t *T_PatchServer_Mapper) UpdateServerNode(node entity.ServerNode)error{
+func (t *T_PatchServer_Mapper) UpdateServerNode(node entity.ServerNode) error {
 	err := t.db.Debug().
 		Model(&entity.ServerNode{}).
 		Where("id = ?", node.ID).
-		Update("additional_args",node.AdditionalArgs).
-		Update("server_run_type",node.ServerRunType).
-		Update("view_page",node.ViewPage).
+		Update("additional_args", node.AdditionalArgs).
+		Update("server_run_type", node.ServerRunType).
+		Update("view_page", node.ViewPage).
 		Error
 	return err
 }
 
-func (t *T_PatchServer_Mapper) DeleteServerNode(ids []int)error{
+func (t *T_PatchServer_Mapper) DeleteServerNode(ids []int) error {
 	err := t.db.Debug().
 		Model(&entity.ServerNode{}).
 		Where("id in (?)", ids).
-		Update("server_node_status",constant.COMM_STATUS_DELETE).
+		Update("server_node_status", constant.COMM_STATUS_DELETE).
 		Error
 	return err
 }
@@ -177,7 +177,6 @@ func (t *T_PatchServer_Mapper) GetServerInfo(id int) (entity.Server, error) {
 	return server, res.Error
 }
 
-
 type ServerNodesVo struct {
 	Id               int     `json:"id"`
 	Host             string  `json:"host"`
@@ -189,9 +188,9 @@ type ServerNodesVo struct {
 	MemoryLimit      int     `json:"memory_limit"`
 	ServerRunType    int     `json:"server_run_type"`
 	AdditionalArgs   string  `json:"additional_args"`
-	ServerId 		 int     `json:"server_id"`
-	ViewPage 		 string  `json:"view_page"`
-	Alias 			 string  `json:"alias"`
+	ServerId         int     `json:"server_id"`
+	ViewPage         string  `json:"view_page"`
+	Alias            string  `json:"alias"`
 }
 
 func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]ServerNodesVo, error) {
@@ -232,7 +231,7 @@ func (t *T_PatchServer_Mapper) GetServerNodes(serverId int, nodeId int) ([]Serve
 		server_node_limits ON server_nodes.id = server_node_limits.server_node_id
 	`
 	query += where
-	res := t.db.Raw(query, params...).Scan(&servers)
+	res := t.db.Debug().Raw(query, params...).Scan(&servers)
 	return servers, res.Error
 }
 
@@ -342,7 +341,6 @@ func (t *T_PatchServer_Mapper) UpsertServerNodeLimit(req *entity.ServerNodeLimit
 	return res.Error
 }
 
-
 func (t *T_PatchServer_Mapper) GetHost(nodeId int) (string, error) {
 	var Node entity.Node
 	res := t.db.Debug().
@@ -359,4 +357,19 @@ func (t *T_PatchServer_Mapper) GetNodeIdByHost(host string) (int, error) {
 		Where("host =?", host).
 		First(&Node)
 	return Node.ID, res.Error
+}
+
+func (t *T_PatchServer_Mapper) UpdateServer(req *entity.Server) error {
+	res := t.db.Debug().
+		Model(&entity.Server{}).
+		Where("id = ?", req.ID).
+		Update("docker_name", req.DockerName).
+		Update("log_path", req.LogPath).
+		Update("exec_file_path", req.ExecFilePath).
+		Update("description", req.Description).
+		Update("server_type", req.ServerType).
+		Update("server_name", req.ServerName).
+		Update("group_id", req.GroupId).
+		Update("update_time", constant.GetCurrentTime())
+	return res.Error
 }

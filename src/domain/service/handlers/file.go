@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -185,4 +186,52 @@ func GetFileList(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "获取文件列表成功", "data": rsp.FileList})
 		return nil
 	})
+}
+
+// 同步服务包
+func SyncUploadFile(ctx *gin.Context){
+	var req struct {
+		ServerId int    `json:"serverId"`
+		PackageId int   `json:"packageId"`
+		NodeIds   []int `json:"serverNodeIds"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	packageInfo, err := mapper.T_Mapper.GetServerPackageInfo(req.PackageId)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务包信息失败"})
+		return
+	}
+	for _, nodeId := range req.NodeIds {
+		if nodeId == 0 {
+			continue
+		}
+		nodeInfoArr, err := mapper.T_Mapper.GetServerNodes(req.ServerId,nodeId)
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取节点信息失败"})
+			return
+		}
+		if len(nodeInfoArr) == 0 {
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取节点信息失败"})
+			return
+		}
+		err = proxy.ProxyMap.DispatchByHost(nodeInfoArr[0].Host, func(client *protocol.NodeServantClient) error {
+				_, err := (*client).SyncServicePackage(context.Background(), &protocol.SyncReq{
+					FileName: packageInfo.FileName,
+					Type: constant.FILE_TYPE_PACKAGE,
+				})
+				if err != nil {
+					logger.Server.Errorf("DeployScripts | SyncServicePackage | %v", err)
+					return err
+				}
+				return nil
+			})
+		if err != nil {
+			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "同步服务包失败: " + err.Error()})
+			return
+		}
+	}
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "同步服务包成功"})
 }

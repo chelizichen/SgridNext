@@ -18,14 +18,22 @@ import (
 	"sgridnext.com/src/proxy"
 )
 
+type CREATE_SERVER_REQ struct {
+	ServerName   string `json:"serverName"`
+	GroupId      int    `json:"groupId"`
+	ServerType   int    `json:"serverType"`
+	Description  string `json:"description"`
+	ExecFilePath string `json:"execFilePath"`
+	LogPath 	 string `json:"logPath"`
+	DockerName 	 string `json:"dockerName"`
+	ID int `json:"id" default:"0"`
+}
+
 func CreateServer(ctx *gin.Context) {
-	var req struct {
-		ServerName   string `json:"serverName"`
-		GroupId      int    `json:"groupId"`
-		ServerType   int    `json:"serverType"`
-		Description  string `json:"description"`
-		ExecFilePath string `json:"execFilePath"`
-		LogPath 	 string `json:"logPath"`
+	var req CREATE_SERVER_REQ
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
@@ -46,6 +54,7 @@ func CreateServer(ctx *gin.Context) {
 		GroupId:      req.GroupId,
 		Description:  req.Description,
 		LogPath:      req.LogPath,
+		DockerName:   req.DockerName,
 	}
 
 	if _, err := mapper.T_Mapper.CreateServer(server); err != nil {
@@ -111,22 +120,6 @@ func CreatePackage(ctx *gin.Context) {
 		TYPE:       entity.TYPE_PATCH,
 		Content:    fmt.Sprintf("已部署服务包 %s | 版本号 %d", serverName, rsp),
 	})
-
-	// go func (newFileName string,serverId int)  {
-	// 	// 全量调用
-	// 	proxy.ProxyMap.FullDispatch(func(nsc *protocol.NodeServantClient) error {
-	// 		_,err := (*nsc).SyncServicePackage(context.Background(),&protocol.SyncReq{
-	// 			FileName: newFileName,
-	// 			Type: constant.FILE_TYPE_PACKAGE,
-	// 			ServerId: int32(serverId),
-	// 		})
-	// 		if err  != nil{
-	// 			logger.RPC.Infof("调用失败 | SyncServicePackage | err | %s",err.Error())
-	// 		}
-	// 		return err
-	// 	})	
-	// }(newFileName,serverId)
-
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "创建服务包成功", "hash": hash})
 }
 
@@ -437,4 +430,28 @@ func GetLog(ctx *gin.Context){
 		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": rsp.Data})
 		return nil
 	})
+}
+
+func UpdateServer(ctx *gin.Context) {
+	var req CREATE_SERVER_REQ
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
+		return
+	}
+	err := mapper.T_Mapper.UpdateServer(&entity.Server{
+		ID: req.ID,
+		DockerName: req.DockerName,
+		LogPath: req.LogPath,
+		ExecFilePath: req.ExecFilePath,
+		Description: req.Description,
+		ServerType: req.ServerType,
+		ServerName: req.ServerName,
+		GroupId: req.GroupId,
+		CreateTime: constant.GetCurrentTime(),
+	})
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新失败"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新成功"})
 }
