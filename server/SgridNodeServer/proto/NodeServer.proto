@@ -93,10 +93,15 @@ message GetLogRes{
     repeated string data = 3;    
 }
 
+message ProbeReq{
+    string conf = 1;
+    int32 type = 2; // 1 探针 2 配置信息
+}
+
 // 文件传输服务定义
 service NodeServant {
     // 探针请求
-    rpc Probe(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    rpc Probe(ProbeReq) returns (basicRes) {}
     // 节点心跳
     rpc KeepAlive(google.protobuf.Empty) returns (google.protobuf.Empty) {}
     // 获取节点服务状态

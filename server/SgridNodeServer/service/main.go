@@ -3,6 +3,7 @@ package service
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"sgridnext.com/server/SgridNodeServer/api"
 	"sgridnext.com/server/SgridNodeServer/command"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
+	"sgridnext.com/server/SgridNodeServer/state"
 	"sgridnext.com/server/SgridNodeServer/util"
 	"sgridnext.com/src/config"
 	"sgridnext.com/src/constant"
@@ -31,12 +33,47 @@ type NodeServer struct {
 	protocol.UnimplementedNodeServantServer
 }
 
-func (n *NodeServer) Probe(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	logger.App.Info("探针请求")
-	return &emptypb.Empty{}, nil
+func (n *NodeServer) Probe(ctx context.Context, req *protocol.ProbeReq) (*protocol.BasicRes, error) {
+	if req.Type == 1 {
+		logger.Probe.Info("探针请求，不做任何操作")
+		// 探针请求，不做任何操作
+		return &protocol.BasicRes{
+			Code: CODE_SUCCESS,
+			Msg: MSG_SUCCESS,
+		}, nil
+	}
+	logger.Probe.Info("探针请求，写入配置文件" + req.String())
+	defer state.NodeServerState.Store(state.NODE_STATE_ONLINE)
+	// 覆盖配置文件
+	confStr := req.Conf
+	var confObj constant.ConfObj
+
+	err := json.Unmarshal([]byte(confStr), &confObj)
+	if err != nil {
+		logger.Probe.Errorf("解析配置文件失败: %v", err)
+		return &protocol.BasicRes{
+			Code: CODE_FAIL,
+			Msg:  MSG_FAIL + " | " + err.Error(),
+		}, nil
+	}
+	config.Conf.Set("db", confObj.Db)
+	config.Conf.Set("dbtype", confObj.DbType)
+	config.Conf.Set("nodeIndex", confObj.NodeIndex)
+	config.Conf.Set("mainNode", confObj.MainNode)
+	config.Conf.Set("host", confObj.Host)
+	config.Conf.Set("nodeStatus", state.NODE_STATE_ONLINE)
+	logger.Probe.Info("探针请求完成，节点状态设置为在线")
+	return &protocol.BasicRes{
+		Code: CODE_SUCCESS,
+		Msg: MSG_SUCCESS,
+	}, nil
 }
 
 func (n *NodeServer) KeepAlive(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	if state.NodeServerState.Load() == state.NODE_STATE_STAYBY {
+		logger.App.Info("节点状态为stayby，不进行心跳")
+		return &emptypb.Empty{}, nil
+	}
 	logger.Alive.Info("alive called")
 	err := mapper.T_Mapper.UpdateNodeUpdateTime(config.Conf.GetLocalNodeId())
 	if err != nil {
@@ -49,6 +86,13 @@ func (n *NodeServer) KeepAlive(ctx context.Context, _ *emptypb.Empty) (*emptypb.
 }
 
 func (s *NodeServer) GetNodeStat(ctx context.Context, in *emptypb.Empty) (*protocol.GetNodeStatRsp, error) {
+	if state.NodeServerState.Load() == state.NODE_STATE_STAYBY {
+		logger.App.Info("节点状态为stayby，不进行心跳")
+		return &protocol.GetNodeStatRsp{
+			Code: CODE_SUCCESS,
+			Msg: MSG_SUCCESS,
+		}, nil
+	}
 	cwd, _ := os.Getwd()
 	stat_path := filepath.Join(cwd, "stat.json")
 	jsonStr, err := os.ReadFile(stat_path)
@@ -67,6 +111,13 @@ func (s *NodeServer) GetNodeStat(ctx context.Context, in *emptypb.Empty) (*proto
 }
 
 func (s *NodeServer) SyncAllNodeStat(ctx context.Context, in *protocol.SyncStatReq) (*protocol.BasicRes, error) {
+	if state.NodeServerState.Load() == state.NODE_STATE_STAYBY {
+		logger.App.Info("节点状态为stayby，不进行心跳")
+		return &protocol.BasicRes{
+			Code: CODE_SUCCESS,
+			Msg: MSG_SUCCESS,
+		}, nil
+	}	
 	cwd, _ := os.Getwd()
 	stat_remote_path := filepath.Join(cwd, "stat-remote.json")
 	outFile, err := os.OpenFile(stat_remote_path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)

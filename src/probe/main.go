@@ -11,7 +11,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/emptypb"
 	protocol "sgridnext.com/server/SgridNodeServer/proto"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/logger"
@@ -204,7 +203,12 @@ func probeSingleHost(ip string) ProbeResult {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	_, err = client.Probe(ctx, &emptypb.Empty{})
+	// 通过MMDDHHMMSS 生成一个唯一ID
+
+	_, err = client.Probe(ctx, &protocol.ProbeReq{
+		Conf: ip,
+		Type: 1,
+	})
 	if err != nil {
 		return ProbeResult{
 			IP:     ip,

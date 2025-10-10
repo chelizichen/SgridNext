@@ -15,6 +15,7 @@ import (
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
 	"sgridnext.com/src/patchutils"
+	"sgridnext.com/src/probe"
 	"sgridnext.com/src/proxy"
 )
 
@@ -450,8 +451,14 @@ func UpdateServer(ctx *gin.Context) {
 		CreateTime: constant.GetCurrentTime(),
 	})
 	if err != nil {
+		logger.App.Errorf("更新服务失败 | %s", err.Error())
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新失败"})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新成功"})
+}
+
+func RunProbeTask(ctx *gin.Context) {
+	go probe.RunProbeTask()
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "探针任务执行中，请稍后查看"})
 }

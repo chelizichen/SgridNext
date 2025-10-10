@@ -80,3 +80,12 @@ const (
 	LOG_TYPE_MASTER   = 2 // 主控日志
 	LOG_TYPE_NODE     = 3 // 节点日志
 )
+
+
+type ConfObj struct{
+	Host string `json:"host"`
+	Db string `json:"db"`
+	DbType string `json:"dbtype"`
+	NodeIndex string `json:"nodeIndex"`
+	MainNode string `json:"mainNode"`
+}

@@ -21,7 +21,7 @@ const (
 func (c Config) Get(args ...string) string {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.App.Errorf("config get error: %v", err)
+			logger.App.Errorf("config get string error: %v, key: %v", err, args)
 		}
 	}()
 	if len(args) == 0 {
@@ -35,6 +35,25 @@ func (c Config) Get(args ...string) string {
 		conf = conf[arg].(map[string]interface{})
 	}
 	return ""
+}
+
+func (c Config) GetFloat64(args ...string) float64 {
+	defer func() {
+		if err := recover(); err != nil {
+			logger.App.Errorf("config get float64 error: %v, key: %v", err, args)
+		}
+	}()
+	if len(args) == 0 {
+		return 0
+	}
+	conf := c
+	for i, arg := range args {
+		if i == len(args)-1 {
+			return conf[arg].(float64)
+		}
+		conf = conf[arg].(map[string]interface{})
+	}
+	return 0
 }
 
 // 获取最新配置的值

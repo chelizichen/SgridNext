@@ -10,6 +10,7 @@ import (
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/domain/service/routes"
 	"sgridnext.com/src/proxy"
+	"sgridnext.com/src/schedule"
 )
 
 func main() {
@@ -20,13 +21,14 @@ func main() {
 	}
 	mapper.LoadMapper(ormDb)
 	proxy.LoadProxy()
+	schedule.LoadSchedule()
 	// 初始化路由
 	engine := gin.Default()
 	if conf.Get("pprof") == "enable" {
 		pprof.Register(engine)
 	}
 	routes.LoadRoutes(engine)
-	addr := fmt.Sprintf("%s:%s", conf.Get("httpHost"), conf.Get("httpPort"))
+	addr := fmt.Sprintf("%s:%s", conf.Get("host"), conf.Get("httpPort"))
 	err = engine.Run(addr)
 	if err != nil {
 		panic(fmt.Sprintf("启动HTTP服务失败: %v", err))

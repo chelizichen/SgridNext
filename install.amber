@@ -1,0 +1,73 @@
+import {exit} from "std/env";
+import { file_write, file_append, dir_exist, file_exist, create_dir } from "std/fs"
+
+fun create_dir_if_not_exists(path){
+    if (not dir_exist(path)) {
+        create_dir(path)
+    }
+}
+
+fun create_service_file(install_dir){
+    let service_path = "/usr/lib/systemd/system/sgridnode.service"
+    $ touch "{service_path}" $ failed{
+        echo "create sgridnode.service faild"
+        exit(1)
+    }
+    let content = "
+    [Unit]
+    Description = sgrid next,A cloud platform for grid computing
+    [Service]
+    Type = simple
+    ExecStart = {install_dir}/sgridnode
+    WorkingDirectory = {install_dir}
+    Environment=PATH=/usr/bin:/usr/local/bin
+    Restart = no
+    "
+    unsafe file_write(service_path, content)
+}
+
+
+// sh install.sh 10.124.13.111 /home/sgridnode/ sgridnode.tar.gz
+main(args){
+    let host = args[1]
+    let install_dir = args[2]
+    let package_path = args[3]
+    echo "install host -> {host}"
+    echo "install install_dir -> {install_dir}"
+
+    // 检查安装包是否存在
+    if (not file_exist(package_path)) {
+        echo "package_path {package_path} not exist"
+        exit(1)
+    }
+
+    // 创建 SERVICE
+    create_service_file(install_dir)
+
+    // 创建安装目录
+    create_dir_if_not_exists(install_dir)
+
+    // Tar 解压包到安装目录
+
+    $ tar -zxvf {package_path} -C {install_dir} $ failed{
+        echo "tar -zxvf {package_path} -C {install_dir} faild"
+        exit(1)
+    }
+
+    echo "tar success"
+    // sed 字符串替换
+
+    $sed -i  "s/#HOST#/{host}/g" {install_dir}/config.json$ failed{
+        echo "set host faild"
+        exit(1)
+    }
+
+    echo "install success"
+
+    $ systemctl restart sgridnode $ failed{
+        echo "systemctl restart sgridnode failed"
+        exit(1)
+    }
+
+    echo "start sgridnode success"
+}

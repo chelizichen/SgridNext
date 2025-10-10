@@ -1,4 +1,9 @@
 {
-    "serverName":"TestServer",
-    "logLevel":"info"
+    "__configPath__": "./test.json",
+    "db": "host=10.111.122.133 port=25432 user=admin password=123456 dbname=sgrid_next sslmode=disable",
+    "dbtype": "postgres",
+    "host": "10.111.122.144",
+    "mainNode": "http://10.111.122.133:15872",
+    "nodeIndex": "1",
+    "nodeStatus": 2
 }

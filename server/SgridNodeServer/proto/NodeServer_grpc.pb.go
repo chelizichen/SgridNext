@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NodeServantClient interface {
 	// 探针请求
-	Probe(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Probe(ctx context.Context, in *ProbeReq, opts ...grpc.CallOption) (*BasicRes, error)
 	// 节点心跳
 	KeepAlive(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 获取节点服务状态
@@ -59,8 +59,8 @@ func NewNodeServantClient(cc grpc.ClientConnInterface) NodeServantClient {
 	return &nodeServantClient{cc}
 }
 
-func (c *nodeServantClient) Probe(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *nodeServantClient) Probe(ctx context.Context, in *ProbeReq, opts ...grpc.CallOption) (*BasicRes, error) {
+	out := new(BasicRes)
 	err := c.cc.Invoke(ctx, "/SgridProtocol.NodeServant/Probe", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func (c *nodeServantClient) GetLog(ctx context.Context, in *GetLogReq, opts ...g
 // for forward compatibility
 type NodeServantServer interface {
 	// 探针请求
-	Probe(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	Probe(context.Context, *ProbeReq) (*BasicRes, error)
 	// 节点心跳
 	KeepAlive(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// 获取节点服务状态
@@ -236,7 +236,7 @@ type NodeServantServer interface {
 type UnimplementedNodeServantServer struct {
 }
 
-func (UnimplementedNodeServantServer) Probe(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+func (UnimplementedNodeServantServer) Probe(context.Context, *ProbeReq) (*BasicRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Probe not implemented")
 }
 func (UnimplementedNodeServantServer) KeepAlive(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -289,7 +289,7 @@ func RegisterNodeServantServer(s grpc.ServiceRegistrar, srv NodeServantServer) {
 }
 
 func _NodeServant_Probe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ProbeReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func _NodeServant_Probe_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: "/SgridProtocol.NodeServant/Probe",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServantServer).Probe(ctx, req.(*emptypb.Empty))
+		return srv.(NodeServantServer).Probe(ctx, req.(*ProbeReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }

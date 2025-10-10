@@ -185,3 +185,8 @@ export function getConfigItem(data) {
 export function setConfigItem(data) {
   return request({ url: "/config/setConfigItem", data });
 }
+
+// 探针相关API
+export function runProbeTask() {
+  return request({ url: "/probe/runProbeTask" });
+}

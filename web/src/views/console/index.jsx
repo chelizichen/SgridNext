@@ -31,6 +31,7 @@ import {
   stopServer,
   updateMachineNodeAlias,
   updateMachineNodeStatus,
+  runProbeTask,
 } from "./api";
 import { getServerNodeStatusType, getServerType } from "./constant";
 import ResourceModal from "./ResourceModal";
@@ -70,6 +71,7 @@ export default function Console() {
   const [serverModalVisible, setServerModalVisible] = useState(false);
   const [updateServerVisible, setUpdateServerVisible] = useState(false);
   const [configModalVisible, setConfigModalVisible] = useState(false);
+  const [probeLoading, setProbeLoading] = useState(false);
   const [scaleModalVisible, setScaleModalVisible] = useState(false);
   const [deployModalVisible, setDeployModalVisible] = useState(false);
   const [serverConfigVisible, setServerConfigVisible] = useState(false);
@@ -427,6 +429,26 @@ export default function Console() {
     });
   }
 
+  // 运行探针任务
+  const handleRunProbe = async () => {
+    setProbeLoading(true);
+    try {
+      const response = await runProbeTask();
+      if (response.success) {
+        messageApi.success(response.msg);
+        // 刷新节点列表
+        initNodes();
+      } else {
+        messageApi.error(response.msg);
+      }
+    } catch (error) {
+      messageApi.error('运行探针失败');
+      console.error('运行探针错误:', error);
+    } finally {
+      setProbeLoading(false);
+    }
+  };
+
   const handleSetResourceModalVisible = () => {
     if (selectNodes.length === 0) {
       messageApi.warning("请选择至少一个节点");
@@ -571,6 +593,9 @@ export default function Console() {
                 <Button onClick={() => setConfigModalVisible(true)}>
                   配置管理
                 </Button>
+                <Button onClick={()=>toApplicationLog('',2)}>
+                    主控
+                  </Button>
               </ButtonGroup>
             }
           >
@@ -626,9 +651,13 @@ export default function Console() {
                     isMobile ? { display: "flex", flexDirection: "column" } : {}
                   }
                 >
-                  <Button onClick={()=>toApplicationLog('',2)}>
-                    主控
-                  </Button>
+                <Button 
+                  type="primary" 
+                  onClick={handleRunProbe}
+                  loading={probeLoading}
+                >
+                  运行探针
+                </Button>
                   <Button
                     onClick={initServersAndNodes}
                     style={{ marginBottom: isMobile ? "8px" : 0 }}

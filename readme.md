@@ -11,8 +11,9 @@
 1. 多节点管理与部署
 2. 提供服务注册与发现
 3. 提供远程配置中心
-4. 提供**Cgroup** 限制
-5. 支持Java、Node、以及二进制文件的部署与版本管理
+4. 提供**Cgroup** 的资源限制
+5. 支持Java、Node、以及二进制文件的部署与版本管理，也可以通过 sh 脚本对docker 进行更新管理
+6. **探针管理**，通过在主控直接添加探针配置（**networkPrefixs**），可以自动搜寻在线的 sgridnode 服务，无需重复编写配置文件
 
 该平台采用 **主控-节点** 分离架构，确保业务服务不受管理服务（主控/节点）故障影响：
 
@@ -49,7 +50,7 @@
 
 创建指定systemctl 启动文件 **/usr/lib/systemd/system/sgridnext.service**
 
-```s
+```toml
 [Unit]
 Description = sgrid next,A cloud platform for grid computing
 
@@ -61,8 +62,8 @@ Environment=PATH=/usr/bin:/usr/local/bin
 Restart = no
 ```
 
-ExecStart 为启动文件
-WorkingDirectory 为工作目录
+ExecStart 为启动文件，为用户自己部署的目录下的启动文件
+WorkingDirectory 为工作目录，用户部署目录，自行控制
 Environment 为环境变量
 
 -- 具体配置参考官方文档
@@ -79,14 +80,29 @@ systemctl stop sgridnext
 systemctl status sgridnext
 ```
 
+#### 配置文件示例 config.json
+
+````json
+{
+    "db": "host=10.111.112.113 port=5432 user=admin password=123456 dbname=sgrid_next sslmode=disable",
+    "dbtype": "postgres",
+    "host": "10.111.112.113",
+    "httpPort": "15872",
+    "networkPrefixs": "10.111.112.114,10.111.112.115,10.111.112.116",
+    "nodeIndex": "1",
+    "plantform": {
+        "account": "admin",
+        "password": "admin@sgridnext"
+    }
+}
+````
+
+
+
 ### SgridNode 部署
 
 1. 进入到 server/SgridNodeServer 目录下
-2. 编写配置文件
-   1. db 为主库地址
-   2. nodeIndex 为 节点的 **ID**
-   3. nodePort 为绑定的端口号 默认为 25528
-   4. mainNode 为主节点地址，需要 pin 的通，不然没法拉取配置和包
+2. 编写配置文件 config.json ，首次只需要填写 host 即可，后续通过探针请求来进行配置文件更新
 3. 将 sgridnode 文件 拷贝至 **/usr/sgridnode/** 目录下
 4. 编写 systemctl 启动文件 **/usr/lib/systemd/system/sgridnode.service**
 
@@ -101,6 +117,8 @@ WorkingDirectory = /usr/sgridnode
 Environment=PATH=/usr/bin:/usr/local/bin
 Restart = no
 ```
+
+
 
 ### 创建节点
 
