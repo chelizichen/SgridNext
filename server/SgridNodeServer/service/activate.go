@@ -134,9 +134,14 @@ func (ctx *ActivateContext) setupPanicRecovery() {
 
 // fetchConfigFiles 拉取配置文件
 func (ctx *ActivateContext) fetchConfigFiles() error {
-	return api.GetConfigList(api.GetConfigListReq{
+	err := api.GetConfigList(api.GetConfigListReq{
 		ServerId: ctx.ServerId,
 	})
+	if err != nil {
+		logger.Active.Errorf("Activate | GetConfigList | error=%s", err.Error())
+		return fmt.Errorf("获取配置文件失败: %w", err)
+	}
+	return nil
 }
 
 // handleDeployment 处理部署逻辑

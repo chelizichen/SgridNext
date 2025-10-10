@@ -11,6 +11,7 @@ type Server struct {
 	Description  string `gorm:"column:description;type:varchar(255)"`
 	LogPath 	 string `gorm:"column:log_path;type:varchar(255)"`
 	DockerName 	 string `gorm:"column:docker_name;type:varchar(255)"`
+	ConfigPath 	  string `gorm:"column:config_path;type:varchar(255)"`
 }
 
 type ServerGroup struct {

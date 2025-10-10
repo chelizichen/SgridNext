@@ -15,7 +15,8 @@ export default function UpdateServerModal({ visible, onOk, onCancel, serverInfo 
                 serverType: serverInfo.server_type,
                 execFilePath: serverInfo.exec_path,
                 logPath: serverInfo.log_path,
-                description: serverInfo.desc
+                description: serverInfo.desc,
+                configPath: serverInfo.config_path
             });
         }
     }, [visible, serverInfo, form]);
@@ -73,6 +74,9 @@ export default function UpdateServerModal({ visible, onOk, onCancel, serverInfo 
                         <Input style={{width:'100%'}} />
                     </Form.Item>
                     <Form.Item name="logPath" label="日志文件" rules={[{ required: false, message: '请输入日志文件路径' }]}> 
+                        <Input style={{width:'100%'}} />
+                    </Form.Item>
+                    <Form.Item name="configPath" label="配置文件" rules={[{ required: false, message: '请输入配置文件路径' }]}> 
                         <Input style={{width:'100%'}} />
                     </Form.Item>
                     <Form.Item name="description" label="服务描述" rules={[{ required: true, message: '请输入服务描述' }]}> 

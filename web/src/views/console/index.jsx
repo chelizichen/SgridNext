@@ -282,6 +282,7 @@ export default function Console() {
         create_time: data.data.CreateTime,
         log_path: data.data.LogPath,
         docker_name: data.data.DockerName,
+        config_path: data.data.ConfigPath,
       });
     });
     getServerNodes({ id: serverId }).then((res) => {
@@ -704,14 +705,14 @@ export default function Console() {
                 <Descriptions.Item label="服务名">
                   {serverInfo.server_name}
                 </Descriptions.Item>
-                <Descriptions.Item label="服务组">
-                  {serverIdToGroupMap[serverInfo.server_id]?.group_name} 
-                </Descriptions.Item>
                 <Descriptions.Item label="docker名称">
                   {serverInfo.docker_name}
                 </Descriptions.Item>
                 <Descriptions.Item label="服务号">
                   {serverInfo.server_id}
+                </Descriptions.Item>
+                <Descriptions.Item label="服务组" >
+                  {serverIdToGroupMap[serverInfo.server_id]?.group_name} 
                 </Descriptions.Item>
                 <Descriptions.Item label="服务类型">
                   {getServerType(serverInfo.server_type)}
@@ -730,6 +731,15 @@ export default function Console() {
                   serverInfo.log_path || (
                   serverInfo.server_id ? 
                    "${cwd}/server/SgridPatchServer/log/"+serverInfo.server_name
+                    :
+                   ''
+                  )}
+                </Descriptions.Item>
+                <Descriptions.Item label="配置文件地址">
+                  {
+                  serverInfo.config_path || (
+                  serverInfo.server_id ? 
+                   "${cwd}/server/SgridPatchServer/config/"+serverInfo.server_name
                     :
                    ''
                   )}

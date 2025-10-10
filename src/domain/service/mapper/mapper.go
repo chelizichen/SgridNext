@@ -367,6 +367,7 @@ func (t *T_PatchServer_Mapper) UpdateServer(req *entity.Server) error {
 		Update("log_path", req.LogPath).
 		Update("exec_file_path", req.ExecFilePath).
 		Update("description", req.Description).
-		Update("server_type", req.ServerType)
+		Update("server_type", req.ServerType).
+		Update("config_path", req.ConfigPath)
 	return res.Error
 }

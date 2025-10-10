@@ -25,9 +25,10 @@ type CREATE_SERVER_REQ struct {
 	ServerType   int    `json:"serverType"`
 	Description  string `json:"description"`
 	ExecFilePath string `json:"execFilePath"`
-	LogPath 	 string `json:"logPath"`
-	DockerName 	 string `json:"dockerName"`
-	ID int `json:"id" default:"0"`
+	LogPath      string `json:"logPath"`
+	DockerName   string `json:"dockerName"`
+	ID           int    `json:"id" default:"0"`
+	ConfigPath   string `json:"configPath"`
 }
 
 func CreateServer(ctx *gin.Context) {
@@ -56,6 +57,7 @@ func CreateServer(ctx *gin.Context) {
 		Description:  req.Description,
 		LogPath:      req.LogPath,
 		DockerName:   req.DockerName,
+		ConfigPath:   req.ConfigPath,
 	}
 
 	if _, err := mapper.T_Mapper.CreateServer(server); err != nil {
@@ -88,7 +90,7 @@ func CreatePackage(ctx *gin.Context) {
 		return
 	}
 	defer src.Close()
-	
+
 	hash, err := patchutils.T_PatchUtils.CalcPackageHashFromReader(src)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "计算文件hash失败", "error": err.Error()})
@@ -127,8 +129,8 @@ func CreatePackage(ctx *gin.Context) {
 func GetServerPackageList(ctx *gin.Context) {
 	var req struct {
 		ServerId int `json:"id"`
-		Offset int `json:"offset"`
-		Size int `json:"size"`
+		Offset   int `json:"offset"`
+		Size     int `json:"size"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
@@ -139,7 +141,7 @@ func GetServerPackageList(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取服务包列表失败", "error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": packages,"total":total})
+	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": packages, "total": total})
 }
 
 func CreateServerNode(ctx *gin.Context) {
@@ -232,7 +234,7 @@ func DeployServer(ctx *gin.Context) {
 			ServerId:      int32(req.ServerId),
 			ServerNodeIds: constant.ConvertToInt32Slice(req.NodeIds),
 			Type:          constant.ACTIVATE_DEPLOY,
-			PackageId: 		int32(req.PackageId),
+			PackageId:     int32(req.PackageId),
 		})
 		callRsp = append(callRsp, rsp)
 		return err
@@ -301,43 +303,42 @@ func GetServerNodes(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": res})
 }
 
-
-func UpdateServerNode(ctx *gin.Context){
+func UpdateServerNode(ctx *gin.Context) {
 	var req struct {
-		Ids         []int    `json:"ids"`
+		Ids            []int  `json:"ids"`
 		ServerRunType  int    `json:"server_run_type"`
 		AdditionalArgs string `json:"additional_args"`
 		ViewPage       string `json:"view_page"`
- 	}
+	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
 	for _, id := range req.Ids {
 		err := mapper.T_Mapper.UpdateServerNode(entity.ServerNode{
-			ID: id,
-			ServerRunType: req.ServerRunType,
+			ID:             id,
+			ServerRunType:  req.ServerRunType,
 			AdditionalArgs: req.AdditionalArgs,
-			ViewPage: req.ViewPage,
+			ViewPage:       req.ViewPage,
 		})
 		if err != nil {
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新失败"})
-			return 
+			return
 		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新成功"})
 }
 
-func DeleteServerNode(ctx *gin.Context) { 
+func DeleteServerNode(ctx *gin.Context) {
 	var req struct {
-		Ids         []int    `json:"ids"`
- 	}
+		Ids []int `json:"ids"`
+	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	 err := mapper.T_Mapper.DeleteServerNode(req.Ids)
-	 if err != nil {
+	err := mapper.T_Mapper.DeleteServerNode(req.Ids)
+	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "删除失败"})
 		return
 	}
@@ -378,29 +379,28 @@ func GetServerInfo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": res})
 }
 
-
-func GetLog(ctx *gin.Context){
+func GetLog(ctx *gin.Context) {
 	var req struct {
-		ServerName string `json:"serverName"`
-		ServerId int `json:"serverId"`
-		NodeId int `json:"nodeId"`
-		Len int `json:"len"`
-		Keyword string `json:"keyword"`
-		Host string `json:"host"`
-		LogType int `json:"logType"`
-		FileName string `json:"fileName"`
-		LogCategory int `json:"logCategory"` // 新增：日志分类（业务/主控/节点）
+		ServerName  string `json:"serverName"`
+		ServerId    int    `json:"serverId"`
+		NodeId      int    `json:"nodeId"`
+		Len         int    `json:"len"`
+		Keyword     string `json:"keyword"`
+		Host        string `json:"host"`
+		LogType     int    `json:"logType"`
+		FileName    string `json:"fileName"`
+		LogCategory int    `json:"logCategory"` // 新增：日志分类（业务/主控/节点）
 	}
-	if err := ctx.ShouldBindJSON(&req); err!= nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
-	
+
 	// 如果是主控日志，直接在本地处理
 	if req.LogCategory == constant.LOG_TYPE_MASTER {
 		cwd, _ := os.Getwd()
 		masterLogPath := filepath.Join(cwd, "logs", req.FileName)
-		
+
 		// 使用本地日志查询函数
 		logContent, err := constant.QueryLog(masterLogPath, int32(req.LogType), req.Keyword, int32(req.Len))
 		if err != nil {
@@ -408,24 +408,24 @@ func GetLog(ctx *gin.Context){
 			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "查询主控日志失败"})
 			return
 		}
-		
+
 		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": logContent})
 		return
 	}
-	
+
 	// 业务日志和节点日志通过RPC调用
 	proxy.ProxyMap.DispatchByHost(req.Host, func(client *protocol.NodeServantClient) error {
 		rsp, err := (*client).GetLog(context.Background(), &protocol.GetLogReq{
-			ServerName: req.ServerName,
-			ServerId: int32(req.ServerId),
-			Len: int32(req.Len),
-			Keyword: req.Keyword,
-			LogType:int32(req.LogType),
-			FileName: req.FileName,
+			ServerName:  req.ServerName,
+			ServerId:    int32(req.ServerId),
+			Len:         int32(req.Len),
+			Keyword:     req.Keyword,
+			LogType:     int32(req.LogType),
+			FileName:    req.FileName,
 			LogCategory: int32(req.LogCategory), // 传递日志分类
 		})
-		if err != nil{
-			logger.RPC.Infof("调用失败 | QueryLog | err | %s",err.Error())
+		if err != nil {
+			logger.RPC.Infof("调用失败 | QueryLog | err | %s", err.Error())
 			return err
 		}
 		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": rsp.Data})
@@ -440,15 +440,16 @@ func UpdateServer(ctx *gin.Context) {
 		return
 	}
 	err := mapper.T_Mapper.UpdateServer(&entity.Server{
-		ID: req.ID,
-		DockerName: req.DockerName,
-		LogPath: req.LogPath,
+		ID:           req.ID,
+		DockerName:   req.DockerName,
+		LogPath:      req.LogPath,
 		ExecFilePath: req.ExecFilePath,
-		Description: req.Description,
-		ServerType: req.ServerType,
-		ServerName: req.ServerName,
-		GroupId: req.GroupId,
-		CreateTime: constant.GetCurrentTime(),
+		Description:  req.Description,
+		ServerType:   req.ServerType,
+		ServerName:   req.ServerName,
+		GroupId:      req.GroupId,
+		CreateTime:   constant.GetCurrentTime(),
+		ConfigPath:   req.ConfigPath,
 	})
 	if err != nil {
 		logger.App.Errorf("更新服务失败 | %s", err.Error())
