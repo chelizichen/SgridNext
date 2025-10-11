@@ -184,13 +184,13 @@ func (c *Command) Start() error {
 	c.cmd.Stderr = outFile
 
 	err = c.cmd.Start()
-	c.SetPid(c.cmd.Process.Pid)
 
 	// 将命令输出重定向到文件
 	if err != nil {
 		logger.CMD.Errorf("failed to start command: %v", err)
 		return err
 	}
+	c.SetPid(c.cmd.Process.Pid)
 	return nil
 }
 

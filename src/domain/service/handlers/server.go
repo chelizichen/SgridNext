@@ -28,15 +28,11 @@ type CREATE_SERVER_REQ struct {
 	LogPath      string `json:"logPath"`
 	DockerName   string `json:"dockerName"`
 	ID           int    `json:"id" default:"0"`
-	ConfigPath   string `json:"configPath"`
+	ConfigPath    string `json:"configPath"`
 }
 
 func CreateServer(ctx *gin.Context) {
 	var req CREATE_SERVER_REQ
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
-		return
-	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
