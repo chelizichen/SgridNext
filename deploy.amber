@@ -115,13 +115,26 @@ fun tar_archive(){
         echo "tar -zcvf "{PKG}".tar.gz archive failed"
         exit(1)
     }
-
-    $tar -zcvf "{SGRID_NODE}".tar.gz archive/"{SGRID_NODE}" $failed{
+    $ cd archive/"{SGRID_NODE}" $failed{
+        echo "cd archive/"{SGRID_NODE}" failed"
+        exit(1)
+    }
+    $tar -zcvf "{SGRID_NODE}".tar.gz ./*$failed{
         echo "tar -zcvf "{SGRID_NODE}".tar.gz archive failed"
         exit(1)
     }
     
-    $tar -zcvf "{SGRID_NEXT}".tar.gz archive/"{SGRID_NEXT}" $failed{
+    $ cd ../../ $failed{
+        echo "cd ../../ failed"
+        exit(1)
+    }
+    
+    $ cd archive/"{SGRID_NEXT}" $failed{
+        echo "cd archive/"{SGRID_NEXT}" failed"
+        exit(1)
+    }
+
+    $tar -zcvf "{SGRID_NEXT}".tar.gz ./* $failed{
         echo "tar -zcvf "{SGRID_NEXT}".tar.gz archive failed"
         exit(1)
     }
