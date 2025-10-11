@@ -32,6 +32,7 @@ import {
   updateMachineNodeAlias,
   updateMachineNodeStatus,
   runProbeTask,
+  getMainConfig,
 } from "./api";
 import { getServerNodeStatusType, getServerType } from "./constant";
 import ResourceModal from "./ResourceModal";
@@ -83,6 +84,9 @@ export default function Console() {
   const [groupOptions, setGroupOptions] = useState([]);
   const [selectNodes, setSelectNodes] = useState([]);
 
+  const [serverTotal, setServerTotal] = useState(0);
+  const [nodeTotal, setNodeTotal] = useState(0);
+  const [mainConfig, setMainConfig] = useState({});
   const NodeColumns = [
     { title: "别名", dataIndex: "Alias", key: "Alias", render: (text, record) => {
       return (
@@ -318,6 +322,7 @@ export default function Console() {
   function initNodes() {
     getNodeList().then((data) => {
       if (data.success) {
+        setNodeTotal(data.data.length);
         setNodes(data.data);
       }
     });
@@ -327,6 +332,7 @@ export default function Console() {
 
   function initServerTreeData() {
     getServerList().then((data) => {
+      setServerTotal(data.data.length);
       console.log("data", data);
       let serverGroup = _.groupBy(data.data, "group_name");
       setServerIdToGroupMap(_.keyBy(data.data, "server_id"))
@@ -348,6 +354,9 @@ export default function Console() {
   const initServersAndNodes = useCallback(() => {
     initServerTreeData();
     initNodes();
+    getMainConfig().then(res=>{
+      setMainConfig(res.data);
+    });
   }, []);
 
   useEffect(() => {
@@ -565,6 +574,47 @@ export default function Console() {
       <Row gutter={isMobile ? 8 : 16}>
         <Col span={isMobile ? 24 : 8}>
           <Card
+            title="主控信息"
+            variant={false}
+            extra={
+              <ButtonGroup
+                style={
+                  isMobile ? { display: "flex", flexDirection: "column" } : {}
+                }
+              >
+                <Button onClick={() => setConfigModalVisible(true)}>
+                  配置管理
+                </Button>
+                <Button onClick={()=>toApplicationLog('',2)}>
+                    日志管理
+                </Button>
+                <Button 
+                  type="primary" 
+                  onClick={handleRunProbe}
+                  loading={probeLoading}
+                >
+                  运行探针
+                </Button>
+              </ButtonGroup>
+            }
+          > 
+          <Descriptions column={4}>
+            <Descriptions.Item  span={2} label="服务总数">
+              {serverTotal}
+            </Descriptions.Item>
+            <Descriptions.Item span={2} label="节点总数">
+              {nodeTotal}
+            </Descriptions.Item>
+            <Descriptions.Item span={4} label="主控主机"> 
+              {mainConfig.config?.host}
+            </Descriptions.Item>
+            <Descriptions.Item span={4} label="主控配置文件">
+              {mainConfig.configPath}
+            </Descriptions.Item>
+          </Descriptions>
+          </Card>
+          <Divider />
+          <Card
             title="服务总揽"
             variant={false}
             extra={
@@ -591,12 +641,6 @@ export default function Console() {
                 <Button onClick={() => setServerModalVisible(true)}>
                   添加服务
                 </Button>
-                <Button onClick={() => setConfigModalVisible(true)}>
-                  配置管理
-                </Button>
-                <Button onClick={()=>toApplicationLog('',2)}>
-                    主控
-                  </Button>
               </ButtonGroup>
             }
           >
@@ -652,13 +696,6 @@ export default function Console() {
                     isMobile ? { display: "flex", flexDirection: "column" } : {}
                   }
                 >
-                <Button 
-                  type="primary" 
-                  onClick={handleRunProbe}
-                  loading={probeLoading}
-                >
-                  运行探针
-                </Button>
                   <Button
                     onClick={initServersAndNodes}
                     style={{ marginBottom: isMobile ? "8px" : 0 }}
