@@ -153,6 +153,7 @@ func (c *Command) AppendEnv(kvarr []string) {
 }
 
 func (c *Command) Start() error {
+	logger.Active.Infof("Start | additionalArgs: %s", c.additionalArgs)
 	if c.additionalArgs != "" {
 		var additionalArgs []string
 		err := json.Unmarshal([]byte(c.additionalArgs), &additionalArgs)
@@ -166,17 +167,21 @@ func (c *Command) Start() error {
 		fmt.Sprintf("%s=%v", constant.SGRID_TARGET_PORT, c.port),
 	})
 	if c.cmd == nil {
-		return fmt.Errorf("command not initialized")
+		err := fmt.Errorf("Start | command not initialized is nil")
+		logger.Active.Errorf("%s",err.Error())
+		return err
 	}
 	cwd, _ := os.Getwd()
 	redirectFilePath := filepath.Join(cwd, constant.TARGET_LOG_DIR, c.serverName, c.serverName+".log")
 	if err := os.MkdirAll(filepath.Dir(redirectFilePath), 0755); err != nil {
-		logger.App.Errorf("创建目录失败: %v", err)
-		return fmt.Errorf("创建目录失败: %v", err)
+		err := fmt.Errorf("Start | 创建目录失败: %v", err)
+		logger.Active.Errorf("%s", err.Error())
+		return err
 	}
 	outFile, err := os.Create(redirectFilePath)
 	if err != nil {
-		logger.CMD.Errorf("failed to create output file: %v", err)
+		err := fmt.Errorf("Start | failed to create output file: %v", err)
+		logger.Active.Errorf("%s", err.Error())
 		return err
 	}
 	defer outFile.Close()
@@ -187,10 +192,13 @@ func (c *Command) Start() error {
 
 	// 将命令输出重定向到文件
 	if err != nil {
-		logger.CMD.Errorf("failed to start command: %v", err)
+		err = fmt.Errorf("failed to start command: %v", err)
+		logger.Active.Errorf("%s", err.Error())
 		return err
 	}
-	c.SetPid(c.cmd.Process.Pid)
+	if c.cmd.Process != nil {
+		c.SetPid(c.cmd.Process.Pid)
+	}
 	return nil
 }
 
