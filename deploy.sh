@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Written in [Amber](https://amber-lang.com/)
 # version: 0.3.5-alpha
-# date: 2025-05-21 16:45:35
+# date: 2025-10-11 08:55:54
 
 
 exit__80_v0() {
@@ -141,7 +141,7 @@ if [ $__AS != 0 ]; then
         __AF_exit80_v0__81_9="$__AF_exit80_v0";
         echo "$__AF_exit80_v0__81_9" > /dev/null 2>&1
 fi
-     cp ./server/SgridNodeServer/config.json ./archive/"${__0_SGRID_NODE}" ;
+     cp ./server/SgridNodeServer/config.template.json ./archive/"${__0_SGRID_NODE}"/config.json ;
     __AS=$?;
 if [ $__AS != 0 ]; then
         echo "cp sgrid next backend failed"
@@ -201,23 +201,43 @@ if [ $__AS != 0 ]; then
         __AF_exit80_v0__116_9="$__AF_exit80_v0";
         echo "$__AF_exit80_v0__116_9" > /dev/null 2>&1
 fi
+    tar -zcvf "${__0_SGRID_NODE}".tar.gz archive/"${__0_SGRID_NODE}" ;
+    __AS=$?;
+if [ $__AS != 0 ]; then
+        echo "tar -zcvf "
+                    echo "${__0_SGRID_NODE}" > /dev/null 2>&1
+        echo ".tar.gz archive failed" > /dev/null 2>&1
+        exit__80_v0 1;
+        __AF_exit80_v0__121_9="$__AF_exit80_v0";
+        echo "$__AF_exit80_v0__121_9" > /dev/null 2>&1
+fi
+    tar -zcvf "${__1_SGRID_NEXT}".tar.gz archive/"${__1_SGRID_NEXT}" ;
+    __AS=$?;
+if [ $__AS != 0 ]; then
+        echo "tar -zcvf "
+                    echo "${__1_SGRID_NEXT}" > /dev/null 2>&1
+        echo ".tar.gz archive failed" > /dev/null 2>&1
+        exit__80_v0 1;
+        __AF_exit80_v0__126_9="$__AF_exit80_v0";
+        echo "$__AF_exit80_v0__126_9" > /dev/null 2>&1
+fi
 }
 args=("$0" "$@")
     clean__94_v0 ;
-    __AF_clean94_v0__122_5="$__AF_clean94_v0";
-    echo "$__AF_clean94_v0__122_5" > /dev/null 2>&1
+    __AF_clean94_v0__131_5="$__AF_clean94_v0";
+    echo "$__AF_clean94_v0__131_5" > /dev/null 2>&1
     build_sgridnext_web__95_v0 ;
-    __AF_build_sgridnext_web95_v0__123_5="$__AF_build_sgridnext_web95_v0";
-    echo "$__AF_build_sgridnext_web95_v0__123_5" > /dev/null 2>&1
+    __AF_build_sgridnext_web95_v0__132_5="$__AF_build_sgridnext_web95_v0";
+    echo "$__AF_build_sgridnext_web95_v0__132_5" > /dev/null 2>&1
     build_sgridnext_backend__96_v0 ;
-    __AF_build_sgridnext_backend96_v0__124_5="$__AF_build_sgridnext_backend96_v0";
-    echo "$__AF_build_sgridnext_backend96_v0__124_5" > /dev/null 2>&1
+    __AF_build_sgridnext_backend96_v0__133_5="$__AF_build_sgridnext_backend96_v0";
+    echo "$__AF_build_sgridnext_backend96_v0__133_5" > /dev/null 2>&1
     build_sgrid_node__97_v0 ;
-    __AF_build_sgrid_node97_v0__125_5="$__AF_build_sgrid_node97_v0";
-    echo "$__AF_build_sgrid_node97_v0__125_5" > /dev/null 2>&1
+    __AF_build_sgrid_node97_v0__134_5="$__AF_build_sgrid_node97_v0";
+    echo "$__AF_build_sgrid_node97_v0__134_5" > /dev/null 2>&1
     make_archive__98_v0 ;
-    __AF_make_archive98_v0__126_5="$__AF_make_archive98_v0";
-    echo "$__AF_make_archive98_v0__126_5" > /dev/null 2>&1
+    __AF_make_archive98_v0__135_5="$__AF_make_archive98_v0";
+    echo "$__AF_make_archive98_v0__135_5" > /dev/null 2>&1
     tar_archive__99_v0 ;
-    __AF_tar_archive99_v0__127_5="$__AF_tar_archive99_v0";
-    echo "$__AF_tar_archive99_v0__127_5" > /dev/null 2>&1
+    __AF_tar_archive99_v0__136_5="$__AF_tar_archive99_v0";
+    echo "$__AF_tar_archive99_v0__136_5" > /dev/null 2>&1

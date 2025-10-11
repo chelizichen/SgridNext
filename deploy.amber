@@ -80,7 +80,7 @@ fun make_archive(){
         echo "mv sgrid node backend failed"
         exit(1)
     }
-    $ cp ./server/SgridNodeServer/config.json ./archive/"{SGRID_NODE}" $ failed{
+    $ cp ./server/SgridNodeServer/config.template.json ./archive/"{SGRID_NODE}"/config.json $ failed{
         echo "cp sgrid next backend failed"
         exit(1)
     }
@@ -115,7 +115,16 @@ fun tar_archive(){
         echo "tar -zcvf "{PKG}".tar.gz archive failed"
         exit(1)
     }
+
+    $tar -zcvf "{SGRID_NODE}".tar.gz archive/"{SGRID_NODE}" $failed{
+        echo "tar -zcvf "{SGRID_NODE}".tar.gz archive failed"
+        exit(1)
+    }
     
+    $tar -zcvf "{SGRID_NEXT}".tar.gz archive/"{SGRID_NEXT}" $failed{
+        echo "tar -zcvf "{SGRID_NEXT}".tar.gz archive failed"
+        exit(1)
+    }
 }
 
 main(args){
