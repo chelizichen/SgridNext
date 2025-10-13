@@ -190,3 +190,8 @@ export function setConfigItem(data) {
 export function runProbeTask() {
   return request({ url: "/probe/runProbeTask" });
 }
+
+// 获取节点资源信息
+export function getNodeResource(nodeId) {
+  return request({ url: "/resource/getNodeResource", data: { nodeId } });
+}

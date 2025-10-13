@@ -49,6 +49,8 @@ type NodeServantClient interface {
 	GetFileList(ctx context.Context, in *GetFileListReq, opts ...grpc.CallOption) (*GetFileListResponse, error)
 	// 获取日志
 	GetLog(ctx context.Context, in *GetLogReq, opts ...grpc.CallOption) (*GetLogRes, error)
+	// 获取节点资源信息
+	GetNodeResource(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNodeResourceRes, error)
 }
 
 type nodeServantClient struct {
@@ -199,6 +201,15 @@ func (c *nodeServantClient) GetLog(ctx context.Context, in *GetLogReq, opts ...g
 	return out, nil
 }
 
+func (c *nodeServantClient) GetNodeResource(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetNodeResourceRes, error) {
+	out := new(GetNodeResourceRes)
+	err := c.cc.Invoke(ctx, "/SgridProtocol.NodeServant/GetNodeResource", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServantServer is the server API for NodeServant service.
 // All implementations must embed UnimplementedNodeServantServer
 // for forward compatibility
@@ -229,6 +240,8 @@ type NodeServantServer interface {
 	GetFileList(context.Context, *GetFileListReq) (*GetFileListResponse, error)
 	// 获取日志
 	GetLog(context.Context, *GetLogReq) (*GetLogRes, error)
+	// 获取节点资源信息
+	GetNodeResource(context.Context, *emptypb.Empty) (*GetNodeResourceRes, error)
 	mustEmbedUnimplementedNodeServantServer()
 }
 
@@ -274,6 +287,9 @@ func (UnimplementedNodeServantServer) GetFileList(context.Context, *GetFileListR
 }
 func (UnimplementedNodeServantServer) GetLog(context.Context, *GetLogReq) (*GetLogRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLog not implemented")
+}
+func (UnimplementedNodeServantServer) GetNodeResource(context.Context, *emptypb.Empty) (*GetNodeResourceRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNodeResource not implemented")
 }
 func (UnimplementedNodeServantServer) mustEmbedUnimplementedNodeServantServer() {}
 
@@ -525,6 +541,24 @@ func _NodeServant_GetLog_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeServant_GetNodeResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServantServer).GetNodeResource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/SgridProtocol.NodeServant/GetNodeResource",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServantServer).GetNodeResource(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeServant_ServiceDesc is the grpc.ServiceDesc for NodeServant service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -579,6 +613,10 @@ var NodeServant_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLog",
 			Handler:    _NodeServant_GetLog_Handler,
+		},
+		{
+			MethodName: "GetNodeResource",
+			Handler:    _NodeServant_GetNodeResource_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

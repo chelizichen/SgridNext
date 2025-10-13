@@ -982,6 +982,69 @@ func (x *ProbeReq) GetType() int32 {
 	return 0
 }
 
+type GetNodeResourceRes struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Code int32  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	Msg  string `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	Data string `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"` // 节点资源信息，json格式
+}
+
+func (x *GetNodeResourceRes) Reset() {
+	*x = GetNodeResourceRes{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_NodeServer_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetNodeResourceRes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNodeResourceRes) ProtoMessage() {}
+
+func (x *GetNodeResourceRes) ProtoReflect() protoreflect.Message {
+	mi := &file_NodeServer_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNodeResourceRes.ProtoReflect.Descriptor instead.
+func (*GetNodeResourceRes) Descriptor() ([]byte, []int) {
+	return file_NodeServer_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetNodeResourceRes) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *GetNodeResourceRes) GetMsg() string {
+	if x != nil {
+		return x.Msg
+	}
+	return ""
+}
+
+func (x *GetNodeResourceRes) GetData() string {
+	if x != nil {
+		return x.Data
+	}
+	return ""
+}
+
 var File_NodeServer_proto protoreflect.FileDescriptor
 
 var file_NodeServer_proto_rawDesc = []byte{
@@ -1074,7 +1137,12 @@ var file_NodeServer_proto_rawDesc = []byte{
 	0x61, 0x74, 0x61, 0x22, 0x32, 0x0a, 0x08, 0x50, 0x72, 0x6f, 0x62, 0x65, 0x52, 0x65, 0x71, 0x12,
 	0x12, 0x0a, 0x04, 0x63, 0x6f, 0x6e, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63,
 	0x6f, 0x6e, 0x66, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x05, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x32, 0xbc, 0x07, 0x0a, 0x0b, 0x4e, 0x6f, 0x64, 0x65,
+	0x05, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x4e, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x4e, 0x6f,
+	0x64, 0x65, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x12, 0x12, 0x0a,
+	0x04, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x63, 0x6f, 0x64,
+	0x65, 0x12, 0x10, 0x0a, 0x03, 0x6d, 0x73, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03,
+	0x6d, 0x73, 0x67, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x32, 0x8c, 0x08, 0x0a, 0x0b, 0x4e, 0x6f, 0x64, 0x65,
 	0x53, 0x65, 0x72, 0x76, 0x61, 0x6e, 0x74, 0x12, 0x3b, 0x0a, 0x05, 0x50, 0x72, 0x6f, 0x62, 0x65,
 	0x12, 0x17, 0x2e, 0x53, 0x67, 0x72, 0x69, 0x64, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
 	0x2e, 0x50, 0x72, 0x6f, 0x62, 0x65, 0x52, 0x65, 0x71, 0x1a, 0x17, 0x2e, 0x53, 0x67, 0x72, 0x69,
@@ -1134,7 +1202,12 @@ var file_NodeServer_proto_rawDesc = []byte{
 	0x12, 0x18, 0x2e, 0x53, 0x67, 0x72, 0x69, 0x64, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
 	0x2e, 0x47, 0x65, 0x74, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x71, 0x1a, 0x18, 0x2e, 0x53, 0x67, 0x72,
 	0x69, 0x64, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x47, 0x65, 0x74, 0x4c, 0x6f,
-	0x67, 0x52, 0x65, 0x73, 0x22, 0x00, 0x42, 0x0c, 0x5a, 0x0a, 0x2e, 0x3b, 0x70, 0x72, 0x6f, 0x74,
+	0x67, 0x52, 0x65, 0x73, 0x22, 0x00, 0x12, 0x4e, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x4e, 0x6f, 0x64,
+	0x65, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
+	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74,
+	0x79, 0x1a, 0x21, 0x2e, 0x53, 0x67, 0x72, 0x69, 0x64, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f,
+	0x6c, 0x2e, 0x47, 0x65, 0x74, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x52, 0x65, 0x73, 0x22, 0x00, 0x42, 0x0c, 0x5a, 0x0a, 0x2e, 0x3b, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x63, 0x6f, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
@@ -1150,7 +1223,7 @@ func file_NodeServer_proto_rawDescGZIP() []byte {
 	return file_NodeServer_proto_rawDescData
 }
 
-var file_NodeServer_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_NodeServer_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_NodeServer_proto_goTypes = []interface{}{
 	(*GetNodeStatRsp)(nil),       // 0: SgridProtocol.GetNodeStatRsp
 	(*SyncStatReq)(nil),          // 1: SgridProtocol.SyncStatReq
@@ -1167,12 +1240,13 @@ var file_NodeServer_proto_goTypes = []interface{}{
 	(*GetLogReq)(nil),            // 12: SgridProtocol.GetLogReq
 	(*GetLogRes)(nil),            // 13: SgridProtocol.GetLogRes
 	(*ProbeReq)(nil),             // 14: SgridProtocol.ProbeReq
-	(*emptypb.Empty)(nil),        // 15: google.protobuf.Empty
+	(*GetNodeResourceRes)(nil),   // 15: SgridProtocol.GetNodeResourceRes
+	(*emptypb.Empty)(nil),        // 16: google.protobuf.Empty
 }
 var file_NodeServer_proto_depIdxs = []int32{
 	14, // 0: SgridProtocol.NodeServant.Probe:input_type -> SgridProtocol.ProbeReq
-	15, // 1: SgridProtocol.NodeServant.KeepAlive:input_type -> google.protobuf.Empty
-	15, // 2: SgridProtocol.NodeServant.GetNodeStat:input_type -> google.protobuf.Empty
+	16, // 1: SgridProtocol.NodeServant.KeepAlive:input_type -> google.protobuf.Empty
+	16, // 2: SgridProtocol.NodeServant.GetNodeStat:input_type -> google.protobuf.Empty
 	1,  // 3: SgridProtocol.NodeServant.SyncAllNodeStat:input_type -> SgridProtocol.SyncStatReq
 	2,  // 4: SgridProtocol.NodeServant.ActivateServant:input_type -> SgridProtocol.activateReq
 	2,  // 5: SgridProtocol.NodeServant.DeactivateServant:input_type -> SgridProtocol.activateReq
@@ -1183,21 +1257,23 @@ var file_NodeServer_proto_depIdxs = []int32{
 	7,  // 10: SgridProtocol.NodeServant.DownloadFile:input_type -> SgridProtocol.DownloadFileRequest
 	9,  // 11: SgridProtocol.NodeServant.GetFileList:input_type -> SgridProtocol.GetFileListReq
 	12, // 12: SgridProtocol.NodeServant.GetLog:input_type -> SgridProtocol.GetLogReq
-	3,  // 13: SgridProtocol.NodeServant.Probe:output_type -> SgridProtocol.basicRes
-	15, // 14: SgridProtocol.NodeServant.KeepAlive:output_type -> google.protobuf.Empty
-	0,  // 15: SgridProtocol.NodeServant.GetNodeStat:output_type -> SgridProtocol.GetNodeStatRsp
-	3,  // 16: SgridProtocol.NodeServant.SyncAllNodeStat:output_type -> SgridProtocol.basicRes
-	3,  // 17: SgridProtocol.NodeServant.ActivateServant:output_type -> SgridProtocol.basicRes
-	3,  // 18: SgridProtocol.NodeServant.DeactivateServant:output_type -> SgridProtocol.basicRes
-	3,  // 19: SgridProtocol.NodeServant.SyncConfigFile:output_type -> SgridProtocol.basicRes
-	3,  // 20: SgridProtocol.NodeServant.SyncServicePackage:output_type -> SgridProtocol.basicRes
-	3,  // 21: SgridProtocol.NodeServant.CgroupLimit:output_type -> SgridProtocol.basicRes
-	3,  // 22: SgridProtocol.NodeServant.CheckStat:output_type -> SgridProtocol.basicRes
-	8,  // 23: SgridProtocol.NodeServant.DownloadFile:output_type -> SgridProtocol.DownloadFileResponse
-	10, // 24: SgridProtocol.NodeServant.GetFileList:output_type -> SgridProtocol.GetFileListResponse
-	13, // 25: SgridProtocol.NodeServant.GetLog:output_type -> SgridProtocol.GetLogRes
-	13, // [13:26] is the sub-list for method output_type
-	0,  // [0:13] is the sub-list for method input_type
+	16, // 13: SgridProtocol.NodeServant.GetNodeResource:input_type -> google.protobuf.Empty
+	3,  // 14: SgridProtocol.NodeServant.Probe:output_type -> SgridProtocol.basicRes
+	16, // 15: SgridProtocol.NodeServant.KeepAlive:output_type -> google.protobuf.Empty
+	0,  // 16: SgridProtocol.NodeServant.GetNodeStat:output_type -> SgridProtocol.GetNodeStatRsp
+	3,  // 17: SgridProtocol.NodeServant.SyncAllNodeStat:output_type -> SgridProtocol.basicRes
+	3,  // 18: SgridProtocol.NodeServant.ActivateServant:output_type -> SgridProtocol.basicRes
+	3,  // 19: SgridProtocol.NodeServant.DeactivateServant:output_type -> SgridProtocol.basicRes
+	3,  // 20: SgridProtocol.NodeServant.SyncConfigFile:output_type -> SgridProtocol.basicRes
+	3,  // 21: SgridProtocol.NodeServant.SyncServicePackage:output_type -> SgridProtocol.basicRes
+	3,  // 22: SgridProtocol.NodeServant.CgroupLimit:output_type -> SgridProtocol.basicRes
+	3,  // 23: SgridProtocol.NodeServant.CheckStat:output_type -> SgridProtocol.basicRes
+	8,  // 24: SgridProtocol.NodeServant.DownloadFile:output_type -> SgridProtocol.DownloadFileResponse
+	10, // 25: SgridProtocol.NodeServant.GetFileList:output_type -> SgridProtocol.GetFileListResponse
+	13, // 26: SgridProtocol.NodeServant.GetLog:output_type -> SgridProtocol.GetLogRes
+	15, // 27: SgridProtocol.NodeServant.GetNodeResource:output_type -> SgridProtocol.GetNodeResourceRes
+	14, // [14:28] is the sub-list for method output_type
+	0,  // [0:14] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -1389,6 +1465,18 @@ func file_NodeServer_proto_init() {
 				return nil
 			}
 		}
+		file_NodeServer_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetNodeResourceRes); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1396,7 +1484,7 @@ func file_NodeServer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_NodeServer_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

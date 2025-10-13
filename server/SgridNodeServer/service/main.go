@@ -18,6 +18,7 @@ import (
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/domain/service/mapper"
 	"sgridnext.com/src/logger"
+	"sgridnext.com/src/resource"
 )
 
 const (
@@ -348,4 +349,21 @@ func (s *NodeServer) GetLog(ctx context.Context, in *protocol.GetLogReq) (*proto
 		Msg:  MSG_SUCCESS,
 		Data: rsp,
 	},nil
+}
+
+func (s *NodeServer) GetNodeResource(ctx context.Context, in *emptypb.Empty) (*protocol.GetNodeResourceRes, error) {
+	logger.App.Info("获取节点资源信息")
+	cwd, _ := os.Getwd()
+	nodeResource := resource.GetNodeResource(cwd)
+	jsonStr, err := json.Marshal(nodeResource)
+	if err != nil {
+		logger.App.Errorf("序列化节点资源信息失败: %v", err)
+		return nil, err
+	}
+	logger.App.Infof("节点资源信息: %s", string(jsonStr))
+	return &protocol.GetNodeResourceRes{
+		Code: CODE_SUCCESS,
+		Msg: MSG_SUCCESS,
+		Data: string(jsonStr),
+	}, nil
 }

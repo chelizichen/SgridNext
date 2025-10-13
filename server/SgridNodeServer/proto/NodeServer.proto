@@ -98,6 +98,12 @@ message ProbeReq{
     int32 type = 2; // 1 探针 2 配置信息
 }
 
+message GetNodeResourceRes{
+    int32 code = 1;
+    string msg = 2;
+    string data = 3; // 节点资源信息，json格式
+}
+
 // 文件传输服务定义
 service NodeServant {
     // 探针请求
@@ -126,4 +132,6 @@ service NodeServant {
     rpc GetFileList(GetFileListReq) returns (GetFileListResponse){};
     // 获取日志
     rpc GetLog(GetLogReq) returns (GetLogRes){};
+    // 获取节点资源信息
+    rpc GetNodeResource(google.protobuf.Empty) returns (GetNodeResourceRes){};
 }

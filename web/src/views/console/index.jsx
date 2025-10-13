@@ -36,6 +36,7 @@ import {
 } from "./api";
 import { getServerNodeStatusType, getServerType } from "./constant";
 import ResourceModal from "./ResourceModal";
+import NodeResourceModal from "./NodeResourceModal";
 import GroupModal from "./GroupModal";
 import ServerModal from "./ServerModal";
 import UpdateServerModal from "./UpdateServerModal";
@@ -68,6 +69,7 @@ export default function Console() {
   // const nagivate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const [resourceModalVisible, setResourceModalVisible] = useState(false);
+  const [nodeResourceModalVisible, setNodeResourceModalVisible] = useState(false);
   const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [serverModalVisible, setServerModalVisible] = useState(false);
   const [updateServerVisible, setUpdateServerVisible] = useState(false);
@@ -140,11 +142,18 @@ export default function Console() {
             <Button onClick={()=>handleUpdateNodeAlias(record)}>别名</Button>
             <Button onClick={()=>handleUpdateNodeStatus(record,1)}>上线</Button>
             <Button danger  onClick={()=>handleUpdateNodeStatus(record,2)}>下线</Button>
+            <Button onClick={()=>handleGetNodeResource(record.ID)}>资源监控</Button>
           </ButtonGroup>
         );
       }
     }
   ];
+
+  const [nodeResourceRecord, setNodeResourceRecord] = useState(null);
+  const handleGetNodeResource = (id) => {
+    setNodeResourceModalVisible(true);
+    setNodeResourceRecord(id);
+  }
 
   const ServerNodesColumns = [
     { title: "主机地址", dataIndex: "host", key: "host",render:(text,record)=>{
@@ -587,6 +596,9 @@ export default function Console() {
                 </Button>
                 <Button onClick={()=>toApplicationLog('',2)}>
                     日志管理
+                </Button>
+                <Button onClick={() => handleGetNodeResource(0)}>
+                  资源监控
                 </Button>
                 <Button 
                   type="primary" 
@@ -1045,6 +1057,12 @@ export default function Console() {
           </Form.Item>
         </Form>
       </Modal>
+      
+      <NodeResourceModal
+        visible={nodeResourceModalVisible}
+        onCancel={() => setNodeResourceModalVisible(false)}
+        nodeId={nodeResourceRecord}
+      />
     </div>
   );
 }

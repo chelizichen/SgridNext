@@ -92,6 +92,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/server/syncUploadFile", handlers.SyncUploadFile)
 	// 探针
 	group.POST("/probe/runProbeTask", handlers.RunProbeTask)
+	// 获取节点资源信息
+	group.POST("/resource/getNodeResource", handlers.GetNodeResource)
 	// 前端静态文件
 	cwd, _ := os.Getwd()
 	root := filepath.Join(cwd, "dist")
