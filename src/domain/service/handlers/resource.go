@@ -35,7 +35,7 @@ func GetNodeResource(c *gin.Context) {
 			"data":    nodeResource,
 		})
 	} else {
-		host, err := mapper.T_Mapper.GetHost(req.	)
+		host, err := mapper.T_Mapper.GetHost(req.NodeId)
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{"success": false, "msg": "获取节点信息失败"})
 			return
