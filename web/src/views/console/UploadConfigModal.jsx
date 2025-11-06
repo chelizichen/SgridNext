@@ -111,7 +111,7 @@ const DiffComponent = ({ prevData, curData, prevFileName, curFileName }) => {
       const diffOutput = createTwoFilesPatch(
         prevFileName,   // 左侧文件名
         curFileName,    // 右侧文件名
-        formatForDiff(prevData),  // 左侧内容（尽量格式化为多行）
+        formatForDiff(prevData || ''),  // 左侧内容（尽量格式化为多行）
         formatForDiff(curData),   // 右侧内容（尽量格式化为多行）
         '', '',                                 // 标题和前缀（可选）
       );

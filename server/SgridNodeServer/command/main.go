@@ -140,6 +140,7 @@ func (c *Command) SetCommand(cmd string, args ...string) error {
 		fmt.Sprintf("%s=%s", constant.SGRID_CONF_DIR, filepath.Join(cwd, constant.TARGET_CONF_DIR, c.serverName)),
 		fmt.Sprintf("%s=%s", constant.SGRID_PACKAGE_DIR, filepath.Join(cwd, constant.TARGET_PACKAGE_DIR, c.serverName)),
 		fmt.Sprintf("%s=%s", constant.SGRID_SERVANT_DIR, filepath.Join(cwd, constant.TARGET_SERVANT_DIR, c.serverName)),
+		fmt.Sprintf("%s=%s", constant.SGRID_DATA_DIR, filepath.Join(cwd, constant.TARGET_DATA_DIR, c.serverName)),
 		fmt.Sprintf("%s=%s", constant.SGRID_NODE_DIR, cwd),
 	)
 	logger.CMD.Infof("s.cmd.Env: %s \n", c.cmd.Env)

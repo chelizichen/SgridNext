@@ -5,11 +5,12 @@ const (
 	SGRID_CONF_DIR    = "SGRID_CONF_DIR"
 	SGRID_PACKAGE_DIR = "SGRID_PACKAGE_DIR"
 	SGRID_SERVANT_DIR = "SGRID_SERVANT_DIR"
-
+	SGRID_DATA_DIR    = "SGRID_DATA_DIR"
 	TARGET_LOG_DIR     = "server/SgridPatchServer/log"
 	TARGET_CONF_DIR    = "server/SgridPatchServer/conf"
 	TARGET_PACKAGE_DIR = "server/SgridPatchServer/package"
 	TARGET_SERVANT_DIR = "server/SgridPatchServer/servant"
+	TARGET_DATA_DIR    = "server/SgridPatchServer/data"
 )
 
 const (
