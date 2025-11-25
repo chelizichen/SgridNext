@@ -264,11 +264,13 @@ func (ctx *ActivateContext) activateSingleNode(node *mapper.ServerNodesVo) error
 
 	// 添加到命令管理器
 	command.CenterManager.AddCommand(node.Id, cmd)
-
-	// 设置cgroup
-	if err := command.UseCgroup(cmd); err != nil {
-		ctx.logNodeErrorStatus(node, "设置cgroup失败", err)
-		return fmt.Errorf("设置cgroup失败: %w", err)
+	
+	// 设置cgroup,安卓就不设置了
+	if config.Conf.GetOs() != "android" {
+		if err := command.UseCgroup(cmd); err != nil {
+			ctx.logNodeErrorStatus(node, "设置cgroup失败", err)
+			return fmt.Errorf("设置cgroup失败: %w", err)
+		}
 	}
 
 	logger.Active.Infof("Activate | node %d activated successfully", node.Id)

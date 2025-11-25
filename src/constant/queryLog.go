@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"sgridnext.com/src/config"
 )
 
 // escapeGrepKeyword escapes special characters in grep keywords
 func escapeGrepKeyword(keyword string) string {
 	// Characters that need to be escaped in grep: . * ? + [ ] ( ) { } ^ $ \ |
 	specialChars := []string{".", "*", "?", "+", "[", "]", "(", ")", "{", "}", "^", "$", "\\", "|"}
-	
+
 	result := keyword
 	for _, char := range specialChars {
 		result = strings.ReplaceAll(result, char, "\\"+char)
 	}
-	
+
 	return result
 }
 
@@ -45,7 +47,7 @@ func QueryLog(logFile string, logType int32, keyword string, lineCount int32) ([
 	} else if strings.Contains(keyword, "+") {
 		// 处理多个grep查询
 		keywords := strings.Split(keyword, "+")
-		
+
 		// 构建grep管道命令
 		grepCmd := baseCmd
 		for _, kw := range keywords {
@@ -57,19 +59,20 @@ func QueryLog(logFile string, logType int32, keyword string, lineCount int32) ([
 				grepCmd = fmt.Sprintf("%s | grep -a '%s'", grepCmd, escapedKw)
 			}
 		}
-		
 		// 添加尾部处理
 		cmdStr = fmt.Sprintf("%s | tail -%d | iconv -c -f UTF-8 -t UTF-8 | sed 's/[\\cA-\\cZ]//g'", grepCmd, lineCount)
 	} else {
 		// 单个关键词查询
 		escapedKeyword := escapeGrepKeyword(keyword)
-		cmdStr = fmt.Sprintf("%s | grep -a '%s' | tail -%d | iconv -c -f UTF-8 -t UTF-8 | sed 's/[\\cA-\\cZ]//g'", 
+		cmdStr = fmt.Sprintf("%s | grep -a '%s' | tail -%d | iconv -c -f UTF-8 -t UTF-8 | sed 's/[\\cA-\\cZ]//g'",
 			baseCmd, escapedKeyword, lineCount)
 	}
-
-	// 执行命令
-	cmd := exec.Command("sh", "-c", cmdStr)
-
+	var cmd *exec.Cmd
+	if config.Conf.GetOs() == "android" {
+		cmd = exec.Command("/bin/sh", "-c", cmdStr)
+	} else {
+		cmd = exec.Command("sh", "-c", cmdStr)
+	}
 	// 创建一个字节缓冲区来存储命令执行的输出
 	var out bytes.Buffer
 	cmd.Stdout = &out

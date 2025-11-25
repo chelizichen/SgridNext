@@ -60,10 +60,16 @@ const LogView = () => {
           logCategory:Number(logCategory)
         })
         
+        // 过滤文件：只保留包含 "log" 的文件，过滤掉 .json 和 .gz 文件
+        const filteredFiles = res.data.filter(file => {
+          const lowerFile = file.toLowerCase();
+          return lowerFile.includes('log') && !lowerFile.endsWith('.json') && !lowerFile.endsWith('.gz');
+        });
+        
         // 添加排序逻辑
-        const sortedFiles = res.data.sort((a, b) => {
+        const sortedFiles = filteredFiles.sort((a, b) => {
           // 提取文件名中的日期部分
-          const dateRegex = /\.(\d{4}-\d{2}-\d{2})\.log$/;
+          const dateRegex = /\.(\d{4}-\d{2}-\d{2})/;
           const dateA = a.match(dateRegex);
           const dateB = b.match(dateRegex);
           

@@ -97,6 +97,10 @@ func (c Config) GetLocalNodeId() int {
 	return nodeId
 }
 
+func (c Config) GetOs() string {
+	return c.Get("os")
+}
+
 var Conf = make(Config)
 
 func LoadConfig(fileName string) Config {

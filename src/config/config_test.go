@@ -11,6 +11,8 @@ func Test_ReadJson(t *testing.T) {
 	data := config.LoadConfig("./test.json")
 	nodeStatus := data.GetFloat64("nodeStatus")
 	fmt.Println("nodeStatus",nodeStatus)
+	os := data.GetOs()
+	fmt.Println("os",os == "")
 	// nodeStatusInt, err := strconv.Atoi(nodeStatus)
 	// if err != nil {
 	// 	panic(err)

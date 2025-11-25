@@ -28,11 +28,11 @@ type T_Proxy struct {
 
 type T_ProxyMap struct {
 	sync.RWMutex
-	items map[int]*T_Proxy
+	items   map[int]*T_Proxy
 	hostMap map[string]int
 }
 
-func (p *T_ProxyMap) AddProxy(nodeId int,host string, proxy *protocol.NodeServantClient) {
+func (p *T_ProxyMap) AddProxy(nodeId int, host string, proxy *protocol.NodeServantClient) {
 	p.Lock()
 	defer p.Unlock()
 	p.items[nodeId] = &T_Proxy{
@@ -110,7 +110,7 @@ var ProxyMap *T_ProxyMap
 
 func init() {
 	ProxyMap = &T_ProxyMap{
-		items: make(map[int]*T_Proxy),
+		items:   make(map[int]*T_Proxy),
 		hostMap: make(map[string]int),
 		RWMutex: sync.RWMutex{},
 	}
@@ -122,7 +122,7 @@ func LoadProxy() {
 	go func() {
 		NodesStatMap := &command.SvrNodeStatMap{
 			UpdateTime: constant.GetCurrentTime(),
-			StatList: make([]*command.SvrNodeStat, 0),
+			StatList:   make([]*command.SvrNodeStat, 0),
 		}
 		for range ticker.C {
 			NodesStatMap.UpdateTime = constant.GetCurrentTime()
@@ -144,12 +144,12 @@ func LoadProxy() {
 							logger.Alive.Errorf("节点 | %s | 挂了 | %s", node.ID, err.Error())
 							continue
 						}
-						nodeStatData,err  := (*ProxyMap.items[node.ID].Proxy).GetNodeStat(context.Background(), &emptypb.Empty{})
-						if err != nil{
+						nodeStatData, err := (*ProxyMap.items[node.ID].Proxy).GetNodeStat(context.Background(), &emptypb.Empty{})
+						if err != nil {
 							logger.Alive.Errorf("节点 | %s | 获取状态异常 | %s", node.ID, err.Error())
 						}
 						var svrNodeMap *command.SvrNodeStatMap
-						json.Unmarshal([]byte(nodeStatData.Data),&svrNodeMap)
+						json.Unmarshal([]byte(nodeStatData.Data), &svrNodeMap)
 						NodesStatMap.StatList = append(NodesStatMap.StatList, svrNodeMap.StatList...)
 						mapper.T_Mapper.UpdateMachineNodeStatus(node.ID, constant.COMM_STATUS_ONLINE)
 					} else {
@@ -182,8 +182,8 @@ func LoadProxy() {
 					}
 				}
 			}
-			jsonStr,err  := json.Marshal(NodesStatMap)
-			for _, node := range nodes{
+			jsonStr, err := json.Marshal(NodesStatMap)
+			for _, node := range nodes {
 				if node.NodeStatus != constant.COMM_STATUS_ONLINE {
 					continue
 				}
@@ -191,31 +191,34 @@ func LoadProxy() {
 					continue
 				}
 				if err != nil {
-					logger.Alive.Errorf("全量节点同步失败 | 序列化 ｜ %s",err.Error())
+					logger.Alive.Errorf("全量节点同步失败 | 序列化 ｜ %s", err.Error())
 					continue
 				}
-				syncRsp,err := (*ProxyMap.items[node.ID].Proxy).SyncAllNodeStat(context.Background(),&protocol.SyncStatReq{
+				syncRsp, err := (*ProxyMap.items[node.ID].Proxy).SyncAllNodeStat(context.Background(), &protocol.SyncStatReq{
 					Data: string(jsonStr),
 				})
-				if err != nil{
-					logger.Alive.Errorf("全量节点同步失败 | 发送失败 ｜ %s",err.Error())
+				if err != nil {
+					logger.Alive.Errorf("全量节点同步失败 | 发送失败 ｜ %s", err.Error())
 					continue
 				}
-				logger.Alive.Infof("全量同步成功 | %v",syncRsp)
+				logger.Alive.Infof("全量同步成功 | %v", syncRsp)
 			}
 			logger.Alive.Info("全量同步完成,开始同步到本地节点")
 			// 本地备份节点状态
 			cwd, _ := os.Getwd()
 			stat_remote_path := filepath.Join(cwd, "stat-remote.json")
-			logger.Alive.Infof("开始同步到本地节点路径 ｜ %s",stat_remote_path)
+			logger.Alive.Infof("开始同步到本地节点路径 ｜ %s", stat_remote_path)
 			outFile, err := os.OpenFile(stat_remote_path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 			if err != nil {
 				logger.App.Errorf("创建文件失败: SyncStat |%v", err)
+				continue
 			}
-			defer outFile.Close()
 			if _, err := outFile.Write([]byte(jsonStr)); err != nil {
 				logger.App.Errorf("文件写入失败: SyncStat | %v", err)
+				outFile.Close()
+				continue
 			}
+			outFile.Close()
 		}
 	}()
 	// ticker.Stop()
