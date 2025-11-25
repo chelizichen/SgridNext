@@ -55,8 +55,9 @@ const (
 )
 
 const (
-	NODE_PORT      = "25528"
-	SGRID_NODE_DIR = "SGRID_NODE_DIR"
+	NODE_PORT         = "25528"
+	NODE_WEBSHELL_PORT = "25529" // 节点 WebShell 端口
+	SGRID_NODE_DIR    = "SGRID_NODE_DIR"
 )
 
 const (

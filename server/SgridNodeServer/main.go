@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"sgridnext.com/server/SgridNodeServer/command"
@@ -14,6 +15,7 @@ import (
 	"sgridnext.com/server/SgridNodeServer/schedule"
 	"sgridnext.com/server/SgridNodeServer/service"
 	"sgridnext.com/server/SgridNodeServer/state"
+	"sgridnext.com/server/SgridNodeServer/webshell"
 	"sgridnext.com/src/config"
 	"sgridnext.com/src/constant"
 	"sgridnext.com/src/db"
@@ -99,9 +101,23 @@ func main() {
 	srv := grpc.NewServer(opts...)
 	protocol.RegisterNodeServantServer(srv, &service.NodeServer{})
 
-	if err := srv.Serve(lis); err != nil {
-		logger.App.Fatal("服务启动失败: ", err)
+	// 启动 gRPC 服务
+	go func() {
+		if err := srv.Serve(lis); err != nil {
+			logger.App.Fatal("gRPC 服务启动失败: ", err)
+		}
+	}()
+	logger.App.Info("节点 gRPC 服务启动在 :" + BIND_ADDR)
+
+	// 启动 WebShell HTTP 服务
+	webshellAddr := fmt.Sprintf("%s:%s", config.Conf.Get("host"), constant.NODE_WEBSHELL_PORT)
+	gin.SetMode(gin.ReleaseMode)
+	httpEngine := gin.Default()
+	httpEngine.GET("/webshell/ws", webshell.HandleWebSocket)
+	
+	if err := httpEngine.Run(webshellAddr); err != nil {
+		logger.App.Fatal("WebShell HTTP 服务启动失败: ", err)
 	} else {
-		logger.App.Info("节点服务启动在 :" + BIND_ADDR)
+		logger.App.Info("节点 WebShell 服务启动在 :" + webshellAddr)
 	}
 }

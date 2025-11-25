@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Card, Button, message } from 'antd';
+import { Card, Button, message, Select } from 'antd';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import './WebShell.css';
+import { getNodeList } from '../console/api';
+
+const { Option } = Select;
 
 const WebShell = () => {
   const terminalRef = useRef(null);
@@ -11,12 +14,22 @@ const WebShell = () => {
   const terminal = useRef(null);
   const fitAddon = useRef(null);
   const [connected, setConnected] = useState(false);
+  const [selectedNode, setSelectedNode] = useState(null); // null 表示主控节点
+  const [nodes, setNodes] = useState([]);
 
-  const connectWebSocket = useCallback((term) => {
+  const connectWebSocket = useCallback((term, nodeHost = null) => {
     // 获取 WebSocket URL
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/api/webshell/ws`;
+    let wsUrl;
+    
+    if (nodeHost) {
+      // 连接到节点服务器，使用固定端口 25529
+      wsUrl = `${protocol}//${nodeHost}:25529/webshell/ws`;
+    } else {
+      // 连接到主控服务器
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}/api/webshell/ws`;
+    }
 
     try {
       const ws = new WebSocket(wsUrl);
@@ -73,12 +86,7 @@ const WebShell = () => {
       ws.onclose = () => {
         setConnected(false);
         message.warning('WebShell 连接已断开');
-        // 尝试重连
-        setTimeout(() => {
-          if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-            connectWebSocket(term);
-          }
-        }, 3000);
+        // 不自动重连，让用户手动选择节点
       };
 
       wsRef.current = ws;
@@ -123,8 +131,19 @@ const WebShell = () => {
       term.focus();
     }
 
-    // 连接 WebSocket
-    connectWebSocket(term);
+    // 加载节点列表
+    getNodeList().then((res) => {
+      if (res.success && res.data) {
+        setNodes(res.data);
+      }
+    }).catch((err) => {
+      console.error('获取节点列表失败:', err);
+    });
+
+    // 初始连接（主控节点）- 延迟连接以确保终端已初始化
+    setTimeout(() => {
+      connectWebSocket(term);
+    }, 100);
 
     // 窗口大小改变时调整终端大小
     const handleResize = () => {
@@ -152,7 +171,31 @@ const WebShell = () => {
       wsRef.current.close();
     }
     if (terminal.current) {
-      connectWebSocket(terminal.current);
+      const nodeHost = selectedNode ? selectedNode.Host : null;
+      connectWebSocket(terminal.current, nodeHost);
+    }
+  };
+
+  const handleNodeChange = (value) => {
+    // 关闭当前连接
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setConnected(false);
+    
+    // 清空终端
+    if (terminal.current) {
+      terminal.current.clear();
+    }
+    
+    const selectedNodeObj = value === 'master' ? null : nodes.find(n => n.ID === value);
+    setSelectedNode(selectedNodeObj);
+    
+    // 重新连接
+    if (terminal.current) {
+      const nodeHost = selectedNodeObj ? selectedNodeObj.Host : null;
+      connectWebSocket(terminal.current, nodeHost);
     }
   };
 
@@ -167,16 +210,28 @@ const WebShell = () => {
       <Card
         title="WebShell 终端"
         extra={
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Select
+              style={{ width: 200 }}
+              placeholder="选择节点"
+              value={selectedNode ? selectedNode.ID : 'master'}
+              onChange={handleNodeChange}
+            >
+              <Option value="master">主控节点</Option>
+              {nodes.map((node) => (
+                <Option key={node.ID} value={node.ID}>
+                  {node.Alias || node.Host} ({node.NodeStatus === 1 ? '在线' : '离线'})
+                </Option>
+              ))}
+            </Select>
             <Button
               type="primary"
               onClick={handleReconnect}
-              style={{ marginRight: 8 }}
             >
               {connected ? '重新连接' : '连接'}
             </Button>
             <Button onClick={handleClear}>清屏</Button>
-            <span style={{ marginLeft: 16, color: connected ? '#52c41a' : '#ff4d4f' }}>
+            <span style={{ marginLeft: 8, color: connected ? '#52c41a' : '#ff4d4f' }}>
               {connected ? '● 已连接' : '● 未连接'}
             </span>
           </div>
