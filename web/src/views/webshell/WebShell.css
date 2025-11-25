@@ -1,0 +1,13 @@
+.xterm {
+  height: 100%;
+  width: 100%;
+}
+
+.xterm-viewport {
+  overflow-y: auto;
+}
+
+.xterm-screen {
+  height: 100%;
+}
+

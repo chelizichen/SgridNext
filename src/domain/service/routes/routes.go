@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"sgridnext.com/src/domain/service/handlers"
+	"sgridnext.com/src/webshell"
 )
 
 func LoadRoutes(engine *gin.Engine) {
@@ -94,6 +95,8 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/probe/runProbeTask", handlers.RunProbeTask)
 	// 获取节点资源信息
 	group.POST("/resource/getNodeResource", handlers.GetNodeResource)
+	// WebShell WebSocket
+	group.GET("/webshell/ws", webshell.HandleWebSocket)
 	// 前端静态文件
 	cwd, _ := os.Getwd()
 	root := filepath.Join(cwd, "dist")

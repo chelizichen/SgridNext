@@ -5,6 +5,7 @@ import Console from './views/console';
 import Control from './views/control';
 import Login from './views/Login';
 import LogView from './views/log/LogView';
+import WebShell from './views/webshell/WebShell';
 import NodeManager from './views/control/components/NodeManager';
 import ServerList from './views/control/components/ServerList';
 import ConfigList from './views/control/components/ConfigList';
@@ -37,6 +38,7 @@ export default function App() {
             </Menu.Item>
             <Menu.Item key="2" onClick={() => navigate('/console')}>控制台</Menu.Item>
             <Menu.Item key="3" onClick={() => navigate('/control')}>管理中心</Menu.Item>
+            <Menu.Item key="4" onClick={() => navigate('/webshell')}>WebShell</Menu.Item>
           </Menu>
         </Header>
         <Content>
@@ -51,6 +53,7 @@ export default function App() {
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/log" element={<LogView />} />
+            <Route path="/webshell" element={<WebShell />} />
           </Routes>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
