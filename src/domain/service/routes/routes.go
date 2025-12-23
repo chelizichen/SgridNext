@@ -97,6 +97,16 @@ func LoadRoutes(engine *gin.Engine) {
 	group.POST("/resource/getNodeResource", handlers.GetNodeResource)
 	// WebShell WebSocket
 	group.GET("/webshell/ws", webshell.HandleWebSocket)
+	// 文档管理
+	group.POST("/document/upload", handlers.UploadDocument)
+	group.POST("/document/create", handlers.CreateDocument)
+	group.POST("/document/update", handlers.UpdateDocument)
+	group.POST("/document/delete", handlers.DeleteDocument)
+	group.POST("/document/list", handlers.GetDocumentList)
+	group.POST("/document/get", handlers.GetDocument)
+	group.GET("/document/download", handlers.DownloadDocument)
+	group.POST("/document/link", handlers.LinkDocumentToServer)
+	group.GET("/document/relations", handlers.GetDocumentServerRelations)
 	// 前端静态文件
 	cwd, _ := os.Getwd()
 	root := filepath.Join(cwd, "dist")

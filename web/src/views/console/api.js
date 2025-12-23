@@ -195,3 +195,45 @@ export function runProbeTask() {
 export function getNodeResource(nodeId) {
   return request({ url: "/resource/getNodeResource", data: { nodeId } });
 }
+
+// ========== 文档管理 API ==========
+export function uploadDocument(formData) {
+  return axios.post("/api/document/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 60 * 1000,
+  }).then(res => res.data);
+}
+
+export function createDocument(data) {
+  return request({ url: "/document/create", data });
+}
+
+export function updateDocument(data) {
+  return request({ url: "/document/update", data });
+}
+
+export function deleteDocument(data) {
+  return request({ url: "/document/delete", data });
+}
+
+export function getDocumentList() {
+  return request({ url: "/document/list" });
+}
+
+export function getDocument(id) {
+  return request({ url: "/document/get", data: { id } });
+}
+
+export function downloadDocument(id) {
+  return axios.get(`/api/document/download?id=${id}`, {
+    responseType: "blob",
+  });
+}
+
+export function linkDocumentToServer(data) {
+  return request({ url: "/document/link", data });
+}
+
+export function getDocumentServerRelations(documentId) {
+  return axios.get(`/api/document/relations?documentId=${documentId}`).then(res => res.data);
+}

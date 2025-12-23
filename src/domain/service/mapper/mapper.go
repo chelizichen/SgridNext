@@ -25,6 +25,8 @@ func LoadMapper(db *gorm.DB) {
 	T_Mapper.db.AutoMigrate(&entity.ServerNode{})
 	T_Mapper.db.AutoMigrate(&entity.NodeStat{})
 	T_Mapper.db.AutoMigrate(&entity.ServerNodeLimit{})
+	T_Mapper.db.AutoMigrate(&entity.Document{})
+	T_Mapper.db.AutoMigrate(&entity.DocumentServerRelation{})
 }
 
 type T_PatchServer_Mapper struct {
@@ -370,4 +372,99 @@ func (t *T_PatchServer_Mapper) UpdateServer(req *entity.Server) error {
 		Update("server_type", req.ServerType).
 		Update("config_path", req.ConfigPath)
 	return res.Error
+}
+
+// ========== 文档管理相关方法 ==========
+
+// CreateDocument 创建文档
+func (t *T_PatchServer_Mapper) CreateDocument(req *entity.Document) (int, error) {
+	res := t.db.Debug().Create(req)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return req.ID, nil
+}
+
+// GetDocumentList 获取文档列表
+func (t *T_PatchServer_Mapper) GetDocumentList() ([]entity.Document, error) {
+	var documents []entity.Document
+	res := t.db.Debug().Find(&documents)
+	return documents, res.Error
+}
+
+// GetDocumentById 根据ID获取文档
+func (t *T_PatchServer_Mapper) GetDocumentById(id int) (entity.Document, error) {
+	var document entity.Document
+	res := t.db.Debug().Where("id = ?", id).First(&document)
+	return document, res.Error
+}
+
+// UpdateDocument 更新文档
+func (t *T_PatchServer_Mapper) UpdateDocument(req *entity.Document) error {
+	res := t.db.Debug().
+		Model(&entity.Document{}).
+		Where("id = ?", req.ID).
+		Updates(map[string]interface{}{
+			"title":       req.Title,
+			"content":     req.Content,
+			"update_time": req.UpdateTime,
+			"description": req.Description,
+		})
+	return res.Error
+}
+
+// DeleteDocument 删除文档
+func (t *T_PatchServer_Mapper) DeleteDocument(id int) error {
+	// 先删除关联关系
+	t.db.Debug().Where("document_id = ?", id).Delete(&entity.DocumentServerRelation{})
+	// 再删除文档
+	res := t.db.Debug().Where("id = ?", id).Delete(&entity.Document{})
+	return res.Error
+}
+
+// CreateDocumentServerRelation 创建文档服务关联
+func (t *T_PatchServer_Mapper) CreateDocumentServerRelation(documentId int, serverId int) error {
+	relation := &entity.DocumentServerRelation{
+		DocumentId: documentId,
+		ServerId:   serverId,
+		CreateTime: constant.GetCurrentTime(),
+	}
+	res := t.db.Debug().Create(relation)
+	return res.Error
+}
+
+// DeleteDocumentServerRelation 删除文档服务关联
+func (t *T_PatchServer_Mapper) DeleteDocumentServerRelation(documentId int, serverId int) error {
+	res := t.db.Debug().
+		Where("document_id = ? AND server_id = ?", documentId, serverId).
+		Delete(&entity.DocumentServerRelation{})
+	return res.Error
+}
+
+// GetDocumentServerRelations 获取文档关联的服务列表
+func (t *T_PatchServer_Mapper) GetDocumentServerRelations(documentId int) ([]int, error) {
+	var relations []entity.DocumentServerRelation
+	res := t.db.Debug().
+		Where("document_id = ?", documentId).
+		Find(&relations)
+	
+	serverIds := make([]int, 0, len(relations))
+	for _, rel := range relations {
+		serverIds = append(serverIds, rel.ServerId)
+	}
+	return serverIds, res.Error
+}
+
+// GetServerDocumentRelations 获取服务关联的文档列表
+func (t *T_PatchServer_Mapper) GetServerDocumentRelations(serverId int) ([]int, error) {
+	var relations []entity.DocumentServerRelation
+	res := t.db.Debug().
+		Where("server_id = ?", serverId).
+		Find(&relations)
+	
+	documentIds := make([]int, 0, len(relations))
+	for _, rel := range relations {
+		documentIds = append(documentIds, rel.DocumentId)
+	}
+	return documentIds, res.Error
 }

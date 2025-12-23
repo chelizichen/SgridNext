@@ -84,3 +84,22 @@ type ServerNodeLimit struct {
 	CreateTime   string `gorm:"column:create_time;type:varchar(64)"`
 	UpdateTime   string `gorm:"column:update_time;type:varchar(64)"`
 }
+
+// Document 文档实体
+type Document struct {
+	ID          int    `gorm:"column:id;primaryKey;autoIncrement"`
+	Title       string `gorm:"column:title;type:varchar(255)"`
+	FileName    string `gorm:"column:file_name;type:varchar(255)"`
+	Content     string `gorm:"column:content;type:text"`
+	CreateTime  string `gorm:"column:create_time;type:varchar(64)"`
+	UpdateTime  string `gorm:"column:update_time;type:varchar(64)"`
+	Description string `gorm:"column:description;type:varchar(500)"`
+}
+
+// DocumentServerRelation 文档服务关联表（多对多）
+type DocumentServerRelation struct {
+	ID         int `gorm:"column:id;primaryKey;autoIncrement"`
+	DocumentId int `gorm:"column:document_id"`
+	ServerId   int `gorm:"column:server_id"`
+	CreateTime string `gorm:"column:create_time;type:varchar(64)"`
+}
