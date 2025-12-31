@@ -97,13 +97,14 @@ func (t *T_PatchServer_Mapper) UpdateNodeStatus(id int, status int) error {
 	return err
 }
 
-func (t *T_PatchServer_Mapper) UpdateServerNode(node entity.ServerNode) error {
+func (t *T_PatchServer_Mapper) UpdateServerNode(id int, updates map[string]interface{}) error {
+	if len(updates) == 0 {
+		return nil
+	}
 	err := t.db.Debug().
 		Model(&entity.ServerNode{}).
-		Where("id = ?", node.ID).
-		Update("additional_args", node.AdditionalArgs).
-		Update("server_run_type", node.ServerRunType).
-		Update("view_page", node.ViewPage).
+		Where("id = ?", id).
+		Updates(updates).
 		Error
 	return err
 }

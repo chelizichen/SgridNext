@@ -301,25 +301,32 @@ func GetServerNodes(ctx *gin.Context) {
 
 func UpdateServerNode(ctx *gin.Context) {
 	var req struct {
-		Ids            []int  `json:"ids"`
-		ServerRunType  int    `json:"server_run_type"`
-		AdditionalArgs string `json:"additional_args"`
-		ViewPage       string `json:"view_page"`
+		Ids            []int   `json:"ids"`
+		ServerRunType  *int    `json:"server_run_type"`
+		AdditionalArgs *string `json:"additional_args"`
+		ViewPage       *string `json:"view_page"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "参数错误"})
 		return
 	}
 	for _, id := range req.Ids {
-		err := mapper.T_Mapper.UpdateServerNode(entity.ServerNode{
-			ID:             id,
-			ServerRunType:  req.ServerRunType,
-			AdditionalArgs: req.AdditionalArgs,
-			ViewPage:       req.ViewPage,
-		})
-		if err != nil {
-			ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新失败"})
-			return
+		updates := make(map[string]interface{})
+		if req.ServerRunType != nil {
+			updates["server_run_type"] = *req.ServerRunType
+		}
+		if req.AdditionalArgs != nil && *req.AdditionalArgs != "" {
+			updates["additional_args"] = *req.AdditionalArgs
+		}
+		if req.ViewPage != nil && *req.ViewPage != "" {
+			updates["view_page"] = *req.ViewPage
+		}
+		if len(updates) > 0 {
+			err := mapper.T_Mapper.UpdateServerNode(id, updates)
+			if err != nil {
+				ctx.JSON(http.StatusOK, gin.H{"success": false, "msg": "更新失败"})
+				return
+			}
 		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{"success": true, "msg": "更新成功"})
